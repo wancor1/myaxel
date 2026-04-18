@@ -41,9 +41,9 @@ RESERVED_WORD=[
     'import','use',
     'pass',
     'int','uint','float','str','bool','null'
-    'int4','int8','int16','int32','int64','int128','int256',
-    'uint4','uint8','uint16','uint32','uint64','uint128','uint256',
-    'float4','float8','float16','float32','float64','float128','float256',
+    'i4','i8','i6','i32','i64','i128','i256',
+    'u4','u8','u6','u32','u64','u128','u256',
+    'f8','f16','f32','f64','f128','f256',
 ]
 COMMENT=[
     '//','/*','*/'
