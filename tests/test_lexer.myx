@@ -1,0 +1,21 @@
+let x=2;
+let y='hello'; // Hi!
+
+/* block comment test
+block comment is not online comment.
+# is not oneline commnet
+*/
+
+if (x == y) {
+    pass
+}
+if (x === y) {
+    pass
+}else{
+    pass
+}
+
+let mut tmp='hi';
+tmp='let'; // nice!
+tmp='"wtf"'; // cool!
+x/*wtf!? This block has been executed!!*/=1.4;

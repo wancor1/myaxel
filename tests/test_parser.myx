@@ -1,0 +1,9 @@
+/*
+let mut sat x:int=1+2*3**4;
+x=x+1*2;
+*/
+if(
+    cond
+){
+    x=x;
+};
