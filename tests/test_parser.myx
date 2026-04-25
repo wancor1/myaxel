@@ -1,7 +1,7 @@
 /*
 let mut sat x:int=1+2*3**4;
 x=x+1*2;
-*/
+
 if(cond){
     x=x;
 }elif(elcon){
@@ -10,4 +10,8 @@ if(cond){
     x=x;
 }else{
     x=x;
+};
+*/
+fn func(x:int,y:int):int{
+    return x+1;
 };

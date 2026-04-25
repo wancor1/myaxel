@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any,Optional
+from typing import Any,Sequence
 
 @dataclass
 class Token:
@@ -40,6 +40,22 @@ class If:
     condition:Expr
     body:list
     else_:Any|None
+
+@dataclass
+class Fn:
+    name:str
+    params:Sequence[Parm|None]
+    return_type:str|None
+    body:list
+
+@dataclass
+class Parm:
+    name:str
+    type_:str|None
+
+@dataclass
+class Return:
+    value:Expr|None
 
 @dataclass
 class Expr:

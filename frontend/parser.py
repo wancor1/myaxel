@@ -55,7 +55,7 @@ class Parser:
     def wskipline(self):
         while self.current_token.type=='LINE': self.next()
 
-    def expect(self,type_:str,value=None) -> data.Token | None:
+    def expect(self,type_:str,value:str|None=None) -> data.Token | None:
         if type_==self.current_token.type:
             if value is None or self.current_token.value == value:
                 token=self.current_token
@@ -63,7 +63,7 @@ class Parser:
                 return token
             else:
                 self.error('unexpected_value')
-                return None    
+                return None
         else:
             self.error('unexpected_type')
             return None
@@ -77,8 +77,10 @@ class Parser:
         elif self.current_token.type=='KEYWORD':
             if self.current_token.value=='let':     return self.parse_let()
             elif self.current_token.value=='if':    return self.parse_if()
+            elif self.current_token.value=='fn':    return self.parse_fn()
+            elif self.current_token.value=='return':return self.parse_return()
             else: self.error('unknown_keyword')
-        else: 
+        else:
             self.error('unknown_keyword')
             return None
 
@@ -121,12 +123,12 @@ class Parser:
             return data.Binary(l, o, r)
         return l
 
-    def parse_assign(self):
+    def parse_assign(self) -> data.Assign | None:
         idn=self.expect('IDENT')
         self.expect('OP','=')
         exp=self.parse_expression()
         self.expect('END')
-        if idn: 
+        if idn:
             return data.Assign(str(idn.value),exp)
         else:
             self.error('expression_isnone')
@@ -137,9 +139,36 @@ class Parser:
         while True:
             tm=self.parse_statement()
             if tm: blocks.append(tm)
-            if self.current_token.type=='OP' and self.current_token.value=='}': break
+            if self.current_token_tv==('OP','}'): break
             if self.current >= len(self.tokens): break
         return blocks
+
+    def parse_params(self) -> list[data.Parm]:
+        p=[]
+        while self.current_token_tv!=('OP',')'):
+            name,type_=None,None
+            name=str(self.current_token.value)
+            self.next()
+            if self.current_token_tv==('OP',':'):
+                self.expect('OP',':')
+                type_=str(self.current_token.value)
+                self.next();self.wskipline
+            p.append(data.Parm(name,type_))
+            if self.current_token_tv==('OP',','): self.expect('OP',',')
+        return p
+    
+    def parse_return(self) -> data.Return | None:
+        if self.current_token_tv==('KEYWORD','return'):
+            self.expect('KEYWORD','return')
+            if self.current_token.type=='END':
+                self.expect('END')
+                return data.Return(None)
+            else:
+                _=self.parse_expression()
+                self.expect('END')
+                return data.Return(_)
+
+    # === blocks ===
 
     def parse_let(self) -> data.Let | None:
         mut,ofm,num=False,'wrap',None
@@ -167,7 +196,7 @@ class Parser:
         if ide: return data.Let(str(ide.value),num,bool(mut),ofm,tpe)
         else: return None
 
-    def parse_if(self):
+    def parse_if(self) -> data.If:
         elifs=[]
         self.expect('KEYWORD','if')
         self.expect('OP','('); self.wskipline()
@@ -202,6 +231,25 @@ class Parser:
             for elcon,elifbod in reversed(elifs):
                 els=data.If(elcon,elifbod,els)
         return data.If(con,ifbod,els)
+
+    def parse_fn(self):
+        retp=None
+        self.expect('KEYWORD','fn')
+        name=self.current_token.value
+        self.next()
+        self.expect('OP','(');self.wskipline()
+        params=self.parse_params()
+        self.expect('OP',')')
+        if self.current_token_tv==('OP',':'):
+            self.expect('OP',':')
+            retp=str(self.current_token.value)
+            self.next()
+        self.wskipline()
+        self.expect('OP','{');self.wskipline()
+        bod=self.parse_block()
+        self.expect('OP','}');self.wskipline()
+        self.expect('END')
+        return data.Fn(str(name),params,retp,bod)
 
     # ===== END =====
 
