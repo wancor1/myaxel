@@ -2,8 +2,12 @@
 let mut sat x:int=1+2*3**4;
 x=x+1*2;
 */
-if(
-    cond
-){
+if(cond){
+    x=x;
+}elif(elcon){
+    x=x;
+}elif(elcon){
+    x=x;
+}else{
     x=x;
 };

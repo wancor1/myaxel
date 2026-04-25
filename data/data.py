@@ -37,7 +37,7 @@ class Let:
 
 @dataclass
 class If:
-    condition:Any
+    condition:Expr
     body:list
     else_:Any|None
 

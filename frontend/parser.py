@@ -11,6 +11,7 @@ class Parser:
         self.tokens:list[Token]=tokens
         self.current:int=0
         self.current_token:Token=self.get(0)
+        self.current_token_tv=self.current_token.type,self.current_token.value
         self.errors:list=[]
         self.statements:list=[]
 
@@ -19,6 +20,7 @@ class Parser:
         self.current+=1
         if self.current < len(self.tokens):
             self.current_token=self.tokens[self.current]
+            self.current_token_tv=self.current_token.type,self.current_token.value
         else:
             self.current_token=Token('COMMENT',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,-1)
 
@@ -166,6 +168,7 @@ class Parser:
         else: return None
 
     def parse_if(self):
+        elifs=[]
         self.expect('KEYWORD','if')
         self.expect('OP','('); self.wskipline()
         if self.current_token.value!=')': con=self.parse_expression()
@@ -173,13 +176,32 @@ class Parser:
         self.wskipline()
         self.expect('OP',')'); self.wskipline()
         self.expect('OP','{'); self.wskipline()
-        bod=self.parse_block()
+        ifbod=self.parse_block()
         self.expect('OP','}'); self.wskipline()
         if self.current_token.type=='END':
             self.next()
-            return data.If(con,bod,None)
-        
-        return data.If(con,bod,None)
+            return data.If(con,ifbod,None)
+        while self.current_token_tv==('KEYWORD','elif'):
+            self.expect('KEYWORD','elif')
+            self.expect('OP','('); self.wskipline()
+            if self.current_token.value!=')': elcon=self.parse_expression()
+            else: self.error('condition_isnone')
+            self.wskipline()
+            self.expect('OP',')'); self.wskipline()
+            self.expect('OP','{'); self.wskipline()
+            elifbod=self.parse_block()
+            self.expect('OP','}'); self.wskipline()
+            elifs.append((elcon,elifbod))
+        if self.current_token_tv==('KEYWORD','else'):
+            self.expect('KEYWORD','else')
+            self.expect('OP','{')
+            els=self.parse_block()
+            self.expect('OP','}')
+        if self.current_token.type=='END':
+            self.next()
+            for elcon,elifbod in reversed(elifs):
+                els=data.If(elcon,elifbod,els)
+        return data.If(con,ifbod,els)
 
     # ===== END =====
 

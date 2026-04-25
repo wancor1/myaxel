@@ -4,6 +4,7 @@
 - Python並みに書きやすく、Rust並みに安全・厳密
 - インタプリタ + バイトコードVM（将来的にLLVM対応）
 - `fn main()`があればそこから、なければ上から順に実行
+- DB・フロントエンド・ゲーム・数値計算など何でもこの言語一つでできる
 
 ---
 
@@ -34,7 +35,7 @@ let mut sat x: int = 10;
 ## ■型システム
 
 - 型推論あり、型明示可能
-- `int / uint / float / str / bool / Null`
+- `int / uint / float / str / bool / Null / range`
 - ビット数推論あり、明示指定も可能（i64, u32, f16など）
 - ジェネリクスあり
 
@@ -53,6 +54,18 @@ fn pair<T, U>(a: T, b: U): (T, U) { }
 
 ---
 
+## ■newtype
+
+```
+newtype UserId = int;
+newtype Email = str;
+
+let id: UserId = 1;
+let x: int = id;  // エラー！互換性なし
+```
+
+---
+
 ## ■null
 
 - 使われた瞬間に相手の型のデフォルト値に染まる
@@ -65,8 +78,20 @@ fn pair<T, U>(a: T, b: U): (T, U) { }
 ## ■キャスト
 
 ```myaxel
-x as int
-x as f64
+x as int   // Rust風
+int(x)     // 関数風
+```
+
+---
+
+## ■範囲型
+
+```myaxel
+let r: range = 0..10;   // 0から9
+let r: range = 0..=10;  // 0から10
+
+for i in r { }          // ループに使う
+r.contains(5);          // 含まれるか確認
 ```
 
 ---
@@ -76,11 +101,14 @@ x as f64
 ```
 + - * / **
 == != < > <= >=
-= （代入）
+=  （代入）
 := （セイウチ）
-. （メンバーアクセス）
+.  （メンバーアクセス）
 && ||
 ++ --
+|> （パイプ）
+?. （オプショナルチェーン）
+... （スプレッド）
 ```
 
 ---
@@ -96,6 +124,7 @@ x as f64
 * /  5
 **   6
 .    7
+|>   8
 ```
 
 ---
@@ -126,6 +155,7 @@ x as f64
 
 ```
 [1, 2, 3]
+let arr2 = [...arr1, 4, 5];  // スプレッド
 ```
 - 同一型のみ
 
@@ -135,7 +165,7 @@ x as f64
 
 ```myaxel
 let x = (1, "hi");
-let (a, b) = (1, "hi");  // デストラクチャリング
+let (a, b) = (1, "hi");
 ```
 
 ---
@@ -168,6 +198,7 @@ fn add(a: int, b: int): int {
 fn add(a, b) {  // 推論
     return a + b;
 }
+add(a=1, b=2);  // 名前付き引数
 ```
 - 関数は値
 - ネスト可能
@@ -178,20 +209,35 @@ fn add(a, b) {  // 推論
 
 ---
 
+## ■pure関数
+
+```
+pure fn add(a, b) {
+    return a + b;   // OK
+    println("hi");  // エラー！副作用あり
+}
+```
+
+---
+
 ## ■ラムダ/無名関数
 
 ```myaxel
-// JS風
 let f = (x) => x + 1;
 let f = (x) => { return x + 1; };
-
-// Rust風
 let f = |x| x + 1;
 let f = |x| { return x + 1; };
-
-// 引数に渡す
 nums.map((x) => x * 2);
 nums.map(|x| x * 2);
+```
+
+---
+
+## ■パイプ演算子
+
+```
+x |> f |> g;
+[1,2,3] |> map((x) => x*2) |> filter((x) => x>2);
 ```
 
 ---
@@ -261,17 +307,14 @@ if (cond) { }
 elif (cond) { }
 else { }
 
-// if式
 let x = if cond { a } else { b };
-let x = if cond { a };  // elseなしはNull
+let x = if cond { a };
 
 while (cond) { }
 
-// for
-for i in 0..10 { }        // 0から9
-for i in 0..=10 { }       // 0から10
-for i in arr { }          // 配列ループ
-for (i=0, i<10, i++) { }  // C風
+for i in 0..10 { }
+for i in arr { }
+for (i=0, i<10, i++) { }
 
 break;
 continue;
@@ -292,23 +335,68 @@ while (line := readLine()) {
 
 ---
 
+## ■オプショナルチェーン
+
+```
+obj?.field?.method();  // nullなら全体がnull
+```
+
+---
+
 ## ■match（予定）
 
 ```myaxel
 match x {
     1 => ...
+    1..=10 => ...      // 範囲
+    int => ...         // 型
+    n if n > 0 => ...  // 条件付き
 }
+```
+
+---
+
+## ■アノテーション
+
+```
+@trace
+let mut x = 0;
+x++;  // 「x: 0→1 (line:2)」みたいに自動追跡
 ```
 
 ---
 
 ## ■エラーハンドリング
 
-- Result型
-- panic あり
+- panic + unwrap_orで対応（Result型なし）
 - エラーに修正案つき
 - デフォルトはRust的な機械形式
 - ビルド時に人間語モードに切り替え可能
+
+---
+
+## ■unwrap_or
+
+```myaxel
+// イテレータ
+x = arr.iter().next().unwrap_or(0);
+
+// 関数の戻り値がpanic/wrapなら
+x = someFunc().unwrap_or(0);
+```
+- 関数やイテレータの戻り値に使う
+- panic/wrapが起きそうなら代替値を返す
+
+---
+
+## ■イテレータ
+
+```
+arr.iter()
+   .next()
+   .unwrap_or(0);
+```
+- `map` / `filter` / `collect`等は後で追加予定
 
 ---
 
@@ -328,13 +416,41 @@ match x {
 
 ## ■標準関数
 
-```myaxel
+```
 print()
 println()
 input()
 len()
+etc
 ```
-- JSON / HTTP / 並列が標準ライブラリで使える
+
+JSON / HTTP / 並列が標準ライブラリで使える
+
+---
+
+## ■標準ライブラリ
+
+■標準ライブラリ
+基本：
+- `std.io` / `std.fs` / `std.math` / `std.string` / `std.collections`
+
+ネットワーク/Web：
+- `std.http` / `std.json` / `std.websocket` / `std.html`
+
+DB：
+- `std.db` / `std.db.sql` / `std.db.nosql`
+
+フロントエンド：
+- `std.ui` / `std.dom` / `std.css`
+
+ゲーム：
+- `std.game` / `std.render` / `std.physics` / `std.audio`
+
+数値/科学計算：
+- `std.stats` / `std.matrix` / `std.complex` / `std.bignum`
+
+並列/非同期：
+- `std.async` / `std.thread` / `std.channel`
 
 ---
 
@@ -343,6 +459,7 @@ len()
 ```myaxel
 import math;
 use math.sqrt;
+import math use math.sqrt; // pythonのfrom xxx import xxxと同じ
 ```
 - 依存関係管理あり（競合・不足を事前に通知）
 
@@ -375,6 +492,8 @@ use math.sqrt;
 ## ■静的解析
 
 - 標準搭載（ツール不要）
+- overflowが起きそうな箇所を事前に警告
+- nullがどこで染まるか追跡可能
 
 ---
 
