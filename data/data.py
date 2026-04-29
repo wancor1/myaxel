@@ -24,10 +24,6 @@ class ErrorFormat:
 # ==========
 
 @dataclass
-class Program:
-    statements:list
-
-@dataclass
 class Let:
     name:str
     value:Expr|None
@@ -49,13 +45,24 @@ class Fn:
     body:list
 
 @dataclass
+class Return:
+    value:Expr|None
+
+@dataclass
+class While:
+    condition:Expr
+    body:list
+
+# ===
+
+@dataclass
+class Program:
+    statements:list
+
+@dataclass
 class Parm:
     name:str
     type_:str|None
-
-@dataclass
-class Return:
-    value:Expr|None
 
 @dataclass
 class Expr:

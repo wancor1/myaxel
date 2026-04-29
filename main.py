@@ -1,4 +1,4 @@
-import core.filepath as _file
+import core.initialization   as _initialization
 import frontend.lexer as _lexer
 import frontend.parser as _parser
 import data.const as const
@@ -6,8 +6,8 @@ import data.store as store
 
 N=25
 
-def FileInitialization():
-    setting=_file.loader()
+def Initialization():
+    setting=_initialization.Initialization()
     setting.main()
 
 def run_Lexer():
@@ -25,7 +25,7 @@ def run_Parser(token):
 
 if __name__=="__main__":
     if store.debug: print('start initialization...')
-    FileInitialization()
+    Initialization()
     if store.debug:
         print(f'{'='*N}file{'='*N}')
         with open(const.FILEPATH) as f: print(f.read())

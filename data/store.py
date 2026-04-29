@@ -1,3 +1,3 @@
 import os
 
-debug=True
+debug=False

@@ -11,7 +11,11 @@ if(cond){
 }else{
     x=x;
 };
-*/
+
 fn func(x:int,y:int):int{
     return x+1;
+};
+*/
+while(con){
+    x=1;
 };

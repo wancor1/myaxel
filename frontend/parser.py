@@ -1,4 +1,5 @@
 import data.const as const
+import data.store as store
 import data.data as data
 
 from typing import Any
@@ -16,7 +17,7 @@ class Parser:
         self.statements:list=[]
 
     def next(self) -> None:
-        print(self.current_token)
+        if store.debug: print(self.current_token)
         self.current+=1
         if self.current < len(self.tokens):
             self.current_token=self.tokens[self.current]
@@ -78,6 +79,7 @@ class Parser:
             if self.current_token.value=='let':     return self.parse_let()
             elif self.current_token.value=='if':    return self.parse_if()
             elif self.current_token.value=='fn':    return self.parse_fn()
+            elif self.current_token.value=='while': return self.parse_while()
             elif self.current_token.value=='return':return self.parse_return()
             else: self.error('unknown_keyword')
         else:
@@ -232,7 +234,7 @@ class Parser:
                 els=data.If(elcon,elifbod,els)
         return data.If(con,ifbod,els)
 
-    def parse_fn(self):
+    def parse_fn(self) -> data.Fn:
         retp=None
         self.expect('KEYWORD','fn')
         name=self.current_token.value
@@ -250,6 +252,19 @@ class Parser:
         self.expect('OP','}');self.wskipline()
         self.expect('END')
         return data.Fn(str(name),params,retp,bod)
+    
+    def parse_while(self) -> data.While:
+        self.expect('KEYWORD','while')
+        self.expect('OP','('); self.wskipline()
+        if self.current_token.value!=')': con=self.parse_expression()
+        else: self.error('condition_isnone')
+        self.wskipline()
+        self.expect('OP',')'); self.wskipline()
+        self.expect('OP','{'); self.wskipline()
+        bod=self.parse_block()
+        self.expect('OP','}')
+        self.expect('END')
+        return data.While(con,bod)
 
     # ===== END =====
 
