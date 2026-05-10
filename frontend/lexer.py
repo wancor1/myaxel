@@ -100,7 +100,7 @@ class Lexer:
                 self.add_token(string)
                 self.stack.clear()
             elif self.stack[0].isdigit():                           # number
-                if self.get(1).isdigit() or (self.get(1) == '.' and '.' not in self.stack):
+                if self.get(1).isdigit() or (self.get(1) == '.' and self.get(2) != '.' and '.' not in self.stack):
                     pass
                 else:
                     self.add_token("".join(self.stack))

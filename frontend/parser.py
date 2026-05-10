@@ -1,6 +1,7 @@
 import data.const as const
 import data.store as store
 import data.data as data
+import util.util as util
 
 from typing import Any
 
@@ -23,7 +24,7 @@ class Parser:
             self.current_token=self.tokens[self.current]
             self.current_token_tv=self.current_token.type,self.current_token.value
         else:
-            self.current_token=Token('COMMENT',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,-1)
+            self.current_token=Token('COMMENT',f'SEEING THIS IS AN ERROR! ; NEXT ERROR! ; {self.current_token}',self.current,-1)
 
     def get(self,num:int,cfs:bool=False) -> Token:
         return self.tokens[num if cfs else self.current + num]
@@ -32,6 +33,8 @@ class Parser:
         line,col=self.current_token.line,self.current_token.column
         if type=='unknown_keyword':
             self.errors.append(ErrorFormat(type,f'Unknown keyword error:\n{self.current_token}\n',line,col,needed))
+        elif type=='invalid_syntax_for':
+            self.errors.append(ErrorFormat(type,f'invalid for loop syntax:\n{self.current_token}\n',line,col,needed))
         elif type=='expression_isnone':
             self.errors.append(ErrorFormat(type,f'Axpression is None:\n{self.current_token}\n',line,col,needed))
         elif type=='condition_isnone':
@@ -80,6 +83,7 @@ class Parser:
             elif self.current_token.value=='if':    return self.parse_if()
             elif self.current_token.value=='fn':    return self.parse_fn()
             elif self.current_token.value=='while': return self.parse_while()
+            elif self.current_token.value=='for':   return self.parse_for()
             elif self.current_token.value=='return':return self.parse_return()
             else: self.error('unknown_keyword')
         else:
@@ -98,12 +102,30 @@ class Parser:
         else: self.error('unknown_primary','NUMBER or IDENT')
         self.next()
 
-    def parse_expression(self) -> data.Expr:
+    def parse_comp(self):
+        l=self.parse_equality()
+        while self.current_token.value in const.COMPARISON:
+            o=self.current_token.value
+            self.next()
+            r=self.parse_equality()
+            l=data.Binary(l,o,r)
+        return l
+
+    def parse_equality(self):
         l=self.parse_term()
-        while self.current_token.value in const.EXPRS:
+        while self.current_token.value in const.EQUALITY:
             o=self.current_token.value
             self.next()
             r=self.parse_term()
+            l=data.Binary(l,o,r)
+        return l
+
+    def parse_expression(self) -> data.Expr:
+        l=self.parse_comp()
+        while self.current_token.value in const.EXPRS:
+            o=self.current_token.value
+            self.next()
+            r=self.parse_comp()
             l=data.Binary(l,o,r)
         return data.Expr([l])
 
@@ -117,12 +139,12 @@ class Parser:
         return l
 
     def parse_power(self):
-        l = self.parse_primary()
+        l=self.parse_primary()
         if self.current_token.value in const.POWER:
-            o = self.current_token.value
+            o=self.current_token.value
             self.next()
-            r = self.parse_power()
-            return data.Binary(l, o, r)
+            r=self.parse_power()
+            return data.Binary(l,o,r)
         return l
 
     def parse_assign(self) -> data.Assign | None:
@@ -154,11 +176,11 @@ class Parser:
             if self.current_token_tv==('OP',':'):
                 self.expect('OP',':')
                 type_=str(self.current_token.value)
-                self.next();self.wskipline
+                self.next();self.wskipline()
             p.append(data.Parm(name,type_))
             if self.current_token_tv==('OP',','): self.expect('OP',',')
         return p
-    
+
     def parse_return(self) -> data.Return | None:
         if self.current_token_tv==('KEYWORD','return'):
             self.expect('KEYWORD','return')
@@ -200,6 +222,9 @@ class Parser:
 
     def parse_if(self) -> data.If:
         elifs=[]
+        els=None
+        con=data.Expr([])
+        elcon=data.Expr([])
         self.expect('KEYWORD','if')
         self.expect('OP','('); self.wskipline()
         if self.current_token.value!=')': con=self.parse_expression()
@@ -207,7 +232,8 @@ class Parser:
         self.wskipline()
         self.expect('OP',')'); self.wskipline()
         self.expect('OP','{'); self.wskipline()
-        ifbod=self.parse_block()
+        if self.current_token_tv!=('OP','}'): ifbod=self.parse_block()
+        else: ifbod=[]
         self.expect('OP','}'); self.wskipline()
         if self.current_token.type=='END':
             self.next()
@@ -252,8 +278,9 @@ class Parser:
         self.expect('OP','}');self.wskipline()
         self.expect('END')
         return data.Fn(str(name),params,retp,bod)
-    
+
     def parse_while(self) -> data.While:
+        con=data.Expr([])
         self.expect('KEYWORD','while')
         self.expect('OP','('); self.wskipline()
         if self.current_token.value!=')': con=self.parse_expression()
@@ -266,11 +293,42 @@ class Parser:
         self.expect('END')
         return data.While(con,bod)
 
+    def parse_for(self) -> list:
+        self.expect('KEYWORD','for')
+        if self.current_token_tv==('OP','('):
+            self.expect('OP','('); self.wskipline()
+            self.error('invalid_syntax_for')
+        elif self.current_token.type=='IDENT':
+            _ident=self.expect('IDENT')
+            if isinstance(_ident,data.Token):
+                _ident=_ident.value
+            else:
+                _ident='i'
+            self.expect('KEYWORD','in')
+            # range
+            _start=str(self.current_token.value)
+            self.next()
+            self.expect('OP','..')
+            _end=str(self.current_token.value)
+            self.next()
+            self.wskipline()
+            _cond=data.Expr([data.Binary(data.Variable(_ident),'<',data.Literal(_end))])
+            # up
+            _upda=util.increment(str(_ident))
+            self.expect('OP','{')
+            _body=self.parse_block()
+            self.expect('OP','}')
+            self.expect('END')
+            return [util.let(str(_ident),_start,True),data.While(_cond,[_body,_upda])]
+        else: self.error('invalid_syntax_for')
+        return []
+
     # ===== END =====
 
     def main(self) -> tuple[data.Program, list[Any]]:
         statements=[]
         while self.current < len(self.tokens):
             stmt=self.parse_statement()
-            if stmt: statements.append(stmt)
+            if isinstance(stmt,list): statements.extend(stmt)
+            elif stmt: statements.append(stmt)
         return data.Program(statements),self.errors

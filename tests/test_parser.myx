@@ -15,7 +15,15 @@ if(cond){
 fn func(x:int,y:int):int{
     return x+1;
 };
-*/
+
 while(con){
-    x=1;
+    x=x;
+};
+
+for(x=0,x>10,i++){
+    x=x;
+};
+*/
+for i in 0..10{
+    let x=x;
 };
