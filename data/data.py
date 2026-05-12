@@ -4,7 +4,7 @@ from typing import Any,Sequence
 @dataclass
 class Token:
     type:str
-    value:str|int
+    value:str
     line:int
     column:int
 

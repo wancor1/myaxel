@@ -21,7 +21,13 @@ def run_Parser(token):
     if store.debug: print(f'\n{'='*N}Parser output{'='*N}')
     parser=_parser.Parser(token)
     parsed=parser.main()
-    if store.debug: print(f'\n{parsed}')
+    if store.debug: 
+        print(f'\n{parsed}')
+        if parsed[1]:
+            print(f'\n{'='*int(N/2)}ERROR{'='*int(N/2)}')
+            for i,l in enumerate(parsed[1], start=1):
+                print(f'[{i}]\n{l.text}',end='\n'*2)
+            print(f'{'='*(N+5)}')
 
 if __name__=="__main__":
     if store.debug: print('start initialization...')

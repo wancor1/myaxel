@@ -23,6 +23,9 @@ TERMS=[
 POWER=[
     '**'
 ]
+IDC=[
+    '++','--'
+]
 PRIMARY=[
     '..'
 ]
@@ -39,7 +42,8 @@ OPERATORS=[
     '+','-','*','/','**','=',
     '(',')','{','}','"',"'",
     '<','>','<=','>=','==','!=','===',
-    '.',':',',','..'
+    '.',':',',','..',
+    '++','--'
 ]
 RESERVED_WORD=[
     'let','mut','panic','wrap','sat',
@@ -60,18 +64,3 @@ COMMENT=[
 ]
 
 TYPE=['int','uint','float','str','bool','null']
-
-
-# =====
-
-KEYWORD_MAP = {
-    'let':'LET', 'fn':'FN', 'mut':'MUT',
-    'if':'IF', 'else':'ELSE', 'elif':'ELIF',
-    'while':'WHILE', 'for':'FOR', 'return':'RETURN',
-    'break':'BREAK', 'continue':'CONTINUE', 'pass':'PASS',
-    'import':'IMPORT', 'use':'USE',
-}
-OP_MAP = {
-    '+':'PLUS', '-':'MINUS', '*':'ASTARISK',
-    '/':'SLASH', '=':'EQUAL',
-}
