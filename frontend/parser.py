@@ -4,30 +4,40 @@ import data.data as data
 import util.util as util
 
 from typing import Any
+import gc
 
-Token=data.Token
+#Token=data.Token
 ErrorFormat=data.ErrorFormat
 
 class Parser:
-    def __init__(self,tokens:list[Token]) -> None:
-        self.tokens:list[Token]=tokens
+    def __init__(self,tokens:list[data.Token]) -> None:
+        self.tokens:list[data.Token]=tokens
         self.current:int=0
-        self.current_token:Token=self.get(0)
+        self.current_token:data.Token=self.get(0)
         self.current_token_tv=self.current_token.type,self.current_token.value
         self.errors:list=[]
         self.statements:list=[]
+        self.blocker:int=0
 
-    def next(self) -> None:
-        if store.debug: print(self.current_token)
-        self.current+=1
-        if self.current < len(self.tokens):
-            self.current_token=self.tokens[self.current]
-            self.current_token_tv=self.current_token.type,self.current_token.value
-        else:
-            self.current_token=Token('ERROR',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,-1)
+    def next(self,c:int=1) -> bool:
+        for i in range(c):
+            if store.debug: print(self.current_token)
+            self.current+=1
+            if self.current < len(self.tokens):
+                self.blocker=0
+                self.current_token=self.tokens[self.current]
+                self.current_token_tv=self.current_token.type,self.current_token.value
+            else:
+                self.blocker+=1
+                self.current_token=data.Token('ERROR',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,self.blocker)
+                if self.blocker>=50: return True
+        return False
 
-    def get(self,num:int,cfs:bool=False) -> Token:
-        return self.tokens[num if cfs else self.current + num]
+    def get(self,num:int=1,cfs:bool=False) -> data.Token:
+        try:
+            return self.tokens[num if cfs else self.current + num]
+        except:
+            return data.Token('ERROR',f'SEEING THIS IS AN ERROR! ; GET ERROR!',self.current,-1)
 
     def error(self,type:str,needed=None) -> None:
         line,col=self.current_token.line,self.current_token.column
@@ -47,6 +57,12 @@ class Parser:
             self.errors.append(ErrorFormat(type,f'Unknown value error:\n  {self.current_token}',line,col,needed))
         elif type=='unexpected_primary':
             self.errors.append(ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
+        elif type=='not_crement':
+            self.errors.append(ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
+        elif type=='wrong_pos_end':
+            self.errors.append(ErrorFormat(type,f'end...??\n  {self.current_token}',line,col,needed))
+        elif type=='dontcry':
+            self.errors.append(ErrorFormat(type,f'Don\'t cry, it\'s okay.\n  {self.current_token}',line,col,needed))
         else:
             self.errors.append(ErrorFormat(type,f'Unexpected error:\n  {self.current_token}',line,col,needed))
         self.skip()
@@ -56,12 +72,13 @@ class Parser:
             if self.current_token.type=='END':
                 self.next()
                 break
-            self.next()
+            if self.next(): break
 
-    def wskipline(self):
-        while self.current_token.type=='LINE': self.next()
+    def wskipline(self) -> None:
+        while self.current_token.type=='LINE':
+            if self.next(): break
 
-    def expect(self,type_:str,value:str|None=None) -> data.Token | None:
+    def expect(self,type_:str,value:str|None=None) -> data.Token:
         if type_==self.current_token.type:
             if value is None or self.current_token.value == value:
                 token=self.current_token
@@ -69,18 +86,21 @@ class Parser:
                 return token
             else:
                 self.error('unexpected_value')
-                return None
+                return data.Token('ERROR','unexpected_value',-1,-1)
         else:
             self.error('unexpected_type')
-            return None
+            return data.Token('ERROR','unexpected_type',-1,-1)
 
     # ===== parse =====
 
-    def parse_statement(self):
+    def parse_statement(self) -> Any:
+        if self.blocker>=50: return 
         if self.current_token.type=='COMMENT':  self.next()
+        elif self.current_token.type=='ERROR':  self.next()
         elif self.current_token.type=='LINE':   self.next()
         elif self.current_token.type=='IDENT':
-            if self.get(1).value in const.IDC:  return self.parse_crement()
+            if self.get().value in const.IDC:   return self.parse_crement()
+            if self.get().value=='(':           return self.parse_funccall()
             else:                               return self.parse_assign()
         elif self.current_token.type=='KEYWORD':
             if self.current_token.value=='let':     return self.parse_let()
@@ -90,6 +110,11 @@ class Parser:
             elif self.current_token.value=='for':   return self.parse_for()
             elif self.current_token.value=='return':return self.parse_return()
             else: self.error('unknown_keyword')
+        elif self.current_token.type=='END':
+            if self.get().type=='END':
+                self.next()
+                self.error('dontcry')
+            else: self.error('wrong_pos_end')
         else:
             self.error('unknown_keyword')
             return None
@@ -100,20 +125,22 @@ class Parser:
         op=self.current_token.value
         self.next()
         if flag: self.expect('END')
-        if op=='++': return util.increment(ident)
-        else: return util.decrement(ident)
+        if op=='++':    return util.increment(ident)
+        elif op=='--':  return util.decrement(ident)
+        else:           return self.error('not_crement')
 
-    def parse_primary(self):
+    def parse_primary(self) -> data.Literal | data.Variable:
         if self.current_token.type=='NUMBER':
             _=self.expect('NUMBER')
             if _: return data.Literal(_.value)
-            else: return None
+            else: return data.Literal('')
         elif self.current_token.type=='IDENT':
             _=self.expect('IDENT')
             if _: return data.Variable(_.value)
-            else: return None
+            else: return data.Variable('')
         else: self.error('unknown_primary','NUMBER or IDENT')
-        self.next()
+        if self.next(): return data.Literal('')
+        return data.Literal('')
 
     def parse_comp(self):
         l=self.parse_equality()
@@ -160,7 +187,7 @@ class Parser:
             return data.Binary(l,o,r)
         return l
 
-    def parse_assign(self) -> data.Assign | None:
+    def parse_assign(self) -> data.Assign:
         idn=self.expect('IDENT')
         self.expect('OP','=')
         exp=self.parse_expression()
@@ -169,7 +196,7 @@ class Parser:
             return data.Assign(str(idn.value),exp)
         else:
             self.error('expression_isnone')
-            return None
+            return data.Assign('',data.Expr([]))
 
     def parse_assignexpr(self) -> data.Assign:
         idn=self.expect('IDENT')
@@ -184,8 +211,8 @@ class Parser:
             self.error('expression_isnone')
             return data.Assign('',data.Expr([]))
 
-    def parse_block(self,stop:tuple=('OP','}')):
-        blocks=[]
+    def parse_block(self,stop:tuple=('OP','}')) -> list[Any]:
+        blocks:list=[]
         while True:
             tm=self.parse_statement()
             if tm: blocks.append(tm)
@@ -196,7 +223,7 @@ class Parser:
     def parse_params(self) -> list[data.Parm]:
         p=[]
         while self.current_token_tv!=('OP',')'):
-            name,type_=None,None
+            name,type_=None,''
             name=str(self.current_token.value)
             self.next()
             if self.current_token_tv==('OP',':'):
@@ -283,8 +310,8 @@ class Parser:
         if self.current_token.type=='END':
             self.next()
             for elcon,elifbod in reversed(elifs):
-                els=data.If(elcon,elifbod,els)
-        return data.If(con,ifbod,els)
+                els=data.If(elcon,elifbod,[els])
+        return data.If(con,ifbod,[els])
 
     def parse_fn(self) -> data.Fn:
         retp=None
@@ -353,7 +380,7 @@ class Parser:
             _end=str(self.current_token.value)
             self.next()
             self.wskipline()
-            _cond=data.Expr([data.Binary(data.Variable(_ident),'<',data.Literal(_end))])
+            _cond=data.Expr([data.Binary(data.Variable(str(_ident)),'<',data.Literal(_end))])
             _upda=util.increment(str(_ident))
             self.expect('OP','{')
             _body=self.parse_block()
@@ -362,6 +389,25 @@ class Parser:
             return [util.let(str(_ident),_start,True),data.While(_cond,[_body,_upda])]
         else: self.error('invalid_syntax_for')
         return []
+
+    def parse_funccall(self) -> data.Call:
+        n=self.expect('IDENT').value
+        self.expect('OP','(')
+        self.wskipline()
+        args:list[data.Expr|tuple]=[]
+        while self.current_token_tv!=('OP',')'):
+            self.wskipline()
+            if self.get().value=='=':
+                name=self.current_token.value
+                self.next(2)
+                args.append((name,self.parse_expression()))
+            else: args.append(self.parse_expression())
+            self.wskipline()
+            if self.current_token_tv==('OP',','): self.next()
+            self.wskipline()
+        self.wskipline()
+        self.expect('OP',')');self.expect('END')
+        return data.Call(n,args)
 
     # ===== END =====
 

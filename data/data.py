@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any,Sequence
+from typing import Sequence
 
 @dataclass
 class Token:
@@ -35,7 +35,7 @@ class Let:
 class If:
     condition:Expr
     body:list
-    else_:Any|None
+    else_:list|None
 
 @dataclass
 class Fn:
@@ -60,9 +60,14 @@ class Program:
     statements:list
 
 @dataclass
+class Call:
+    name:str
+    args:list
+
+@dataclass
 class Parm:
     name:str
-    type_:str|None
+    type_:str
 
 @dataclass
 class Expr:
@@ -70,17 +75,17 @@ class Expr:
 
 @dataclass
 class Literal:
-    value:Any
+    value:str
 
 @dataclass
 class Variable:
-    name:Any
+    name:str
 
 @dataclass
 class Binary:
-    left:Any
-    op:Any
-    right:Any
+    left:Literal|Variable|Binary
+    op:str
+    right:Literal|Variable|Binary
 
 @dataclass
 class Assign:
