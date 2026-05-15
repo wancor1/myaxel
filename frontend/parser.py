@@ -59,7 +59,7 @@ class Parser:
             self.errors.append(ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
         elif type=='not_crement':
             self.errors.append(ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
-        elif type=='Howd_it_get_here':
+        elif type=='howd_it_get_here':
             self.errors.append(ErrorFormat(type,f'How did it get to this point in the process?\n  {self.current_token}',line,col,needed))
         elif type=='wrong_pos_end':
             self.errors.append(ErrorFormat(type,f'end...??\n  {self.current_token}',line,col,needed))
@@ -133,18 +133,14 @@ class Parser:
         elif op=='--':  return util.decrement(ident)
         else:           return self.error('not_crement')
 
-    def parse_primary(self) -> data.Literal | data.Variable:
-        if self.current_token.type=='NUMBER':
-            _=self.expect('NUMBER')
-            if _: return data.Literal(_.value)
-            else: return data.Literal('')
-        elif self.current_token.type=='IDENT':
-            _=self.expect('IDENT')
-            if _: return data.Variable(_.value)
-            else: return data.Variable('')
-        else: self.error('unknown_primary','NUMBER or IDENT')
-        if self.next(): return data.Literal('')
-        return data.Literal('')
+    def parse_expression(self) -> data.Expr:
+        l=self.parse_comp()
+        while self.current_token.value in const.EXPRS:
+            o=self.current_token.value
+            self.next()
+            r=self.parse_comp()
+            l=data.Binary(l,o,r)
+        return data.Expr([l])
 
     def parse_comp(self):
         l=self.parse_equality()
@@ -164,15 +160,6 @@ class Parser:
             l=data.Binary(l,o,r)
         return l
 
-    def parse_expression(self) -> data.Expr:
-        l=self.parse_comp()
-        while self.current_token.value in const.EXPRS:
-            o=self.current_token.value
-            self.next()
-            r=self.parse_comp()
-            l=data.Binary(l,o,r)
-        return data.Expr([l])
-
     def parse_term(self):
         l=self.parse_power()
         while self.current_token.value in const.TERMS:
@@ -190,6 +177,19 @@ class Parser:
             r=self.parse_power()
             return data.Binary(l,o,r)
         return l
+
+    def parse_primary(self) -> data.Literal | data.Variable:
+        if self.current_token.type=='NUMBER':
+            _=self.expect('NUMBER')
+            if _: return data.Literal(_.value)
+            else: return data.Literal('')
+        elif self.current_token.type=='IDENT':
+            _=self.expect('IDENT')
+            if _: return data.Variable(_.value)
+            else: return data.Variable('')
+        else: self.error('unknown_primary','NUMBER or IDENT')
+        if self.next(): return data.Literal('')
+        return data.Literal('')
 
     def parse_assign(self) -> data.Assign:
         idn=self.expect('IDENT')
@@ -250,7 +250,7 @@ class Parser:
                 _=self.parse_expression()
                 self.expect('END')
                 return data.Return(_)
-        self.error('Howd_it_get_here')
+        self.error('howd_it_get_here')
         return data.Return(data.Expr([]))
 
     def parse_break(self):
