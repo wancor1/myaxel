@@ -59,6 +59,8 @@ class Parser:
             self.errors.append(ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
         elif type=='not_crement':
             self.errors.append(ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
+        elif type=='Howd_it_get_here':
+            self.errors.append(ErrorFormat(type,f'How did it get to this point in the process?\n  {self.current_token}',line,col,needed))
         elif type=='wrong_pos_end':
             self.errors.append(ErrorFormat(type,f'end...??\n  {self.current_token}',line,col,needed))
         elif type=='dontcry':
@@ -103,12 +105,14 @@ class Parser:
             if self.get().value=='(':           return self.parse_funccall()
             else:                               return self.parse_assign()
         elif self.current_token.type=='KEYWORD':
-            if self.current_token.value=='let':     return self.parse_let()
-            elif self.current_token.value=='if':    return self.parse_if()
-            elif self.current_token.value=='fn':    return self.parse_fn()
-            elif self.current_token.value=='while': return self.parse_while()
-            elif self.current_token.value=='for':   return self.parse_for()
-            elif self.current_token.value=='return':return self.parse_return()
+            if self.current_token.value=='let':         return self.parse_let()
+            elif self.current_token.value=='if':        return self.parse_if()
+            elif self.current_token.value=='fn':        return self.parse_fn()
+            elif self.current_token.value=='while':     return self.parse_while()
+            elif self.current_token.value=='for':       return self.parse_for()
+            elif self.current_token.value=='return':    return self.parse_return()
+            elif self.current_token.value=='break':     return self.parse_break()
+            elif self.current_token.value=='continue':  return self.parse_continue()
             else: self.error('unknown_keyword')
         elif self.current_token.type=='END':
             if self.get().type=='END':
@@ -234,7 +238,9 @@ class Parser:
             if self.current_token_tv==('OP',','): self.expect('OP',',')
         return p
 
-    def parse_return(self) -> data.Return | None:
+    # === blocks ===
+
+    def parse_return(self) -> data.Return:
         if self.current_token_tv==('KEYWORD','return'):
             self.expect('KEYWORD','return')
             if self.current_token.type=='END':
@@ -244,8 +250,18 @@ class Parser:
                 _=self.parse_expression()
                 self.expect('END')
                 return data.Return(_)
+        self.error('Howd_it_get_here')
+        return data.Return(data.Expr([]))
 
-    # === blocks ===
+    def parse_break(self):
+        self.expect('KEYWORD','break')
+        self.expect('END')
+        return data.Break()
+
+    def parse_continue(self):
+        self.expect('KEYWORD','continue')
+        self.expect('END')
+        return data.Continue()
 
     def parse_let(self) -> data.Let | None:
         mut,ofm,num=False,'wrap',None

@@ -27,8 +27,11 @@ for i in 0..10{
 for(x=0,x>10,i++){
     let x=x;
 };
-*/
+
 foo(x,x=1);
 foo(
     x=1
 );
+*/
+break;
+continue;

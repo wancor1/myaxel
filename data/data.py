@@ -45,6 +45,14 @@ class Fn:
     body:list
 
 @dataclass
+class Break:
+    pass
+
+@dataclass  
+class Continue:
+    pass
+
+@dataclass
 class Return:
     value:Expr|None
 
