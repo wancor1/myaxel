@@ -1,5 +1,5 @@
-# import data.data
-
+from __future__ import annotations
+import data.exception as exception
 class Environment:
     def __init__(self,parent:Environment|None=None) -> None:
         self.parent=parent
@@ -12,7 +12,7 @@ class Environment:
         if name in self.variable: return self.variable[name]['value']
         if self.parent:
             return self.parent.get(name)
-        return None
+        raise exception.UndefinedVariableException(name)
 
     def set(self,name,value):
         if name in self.variable: self.variable[name]['value']=value

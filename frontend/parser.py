@@ -58,6 +58,8 @@ class Parser:
             self.errors.append(ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
         elif type=='not_crement':
             self.errors.append(ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
+        elif type=='forgot_end':
+            self.errors.append(ErrorFormat(type,f'Maybe you forgot the end:\n  {self.current_token}',line,col,needed))
         elif type=='howd_it_get_here':
             self.errors.append(ErrorFormat(type,f'How did it get to this point in the process?\n  {self.current_token}',line,col,needed))
         elif type=='wrong_pos_end':
@@ -89,6 +91,9 @@ class Parser:
                 self.error('unexpected_value')
                 return data.Token('ERROR','unexpected_value',-1,-1)
         else:
+            if type_=='END':
+                self.error('forgot_end')
+                return data.Token('ERROR','forgot_end',-1,-1)
             self.error('unexpected_type')
             return data.Token('ERROR','unexpected_type',-1,-1)
 
@@ -177,16 +182,41 @@ class Parser:
             return data.Binary(l,o,r)
         return l
 
-    def parse_primary(self) -> data.Literal | data.Variable:
-        if self.current_token.type=='NUMBER':
+    def parse_primary(self) -> data.Literal | data.Variable | data.Call | data.Unary:
+        if self.current_token.type == 'OP' and self.current_token.value == '-':
+            self.next()
+            return data.Unary('-', self.parse_primary())
+        elif self.current_token.type=='NUMBER':
             _=self.expect('NUMBER')
             if _: return data.Literal(_.value)
             else: return data.Literal('')
         elif self.current_token.type=='IDENT':
-            _=self.expect('IDENT')
-            if _: return data.Variable(_.value)
-            else: return data.Variable('')
-        else: self.error('unknown_primary','NUMBER or IDENT')
+            if self.get().value=='(':
+                _=self.expect('IDENT')
+                self.expect('OP','(')
+                self.wskipline()
+                args:list[data.Expr|tuple]=[]
+                while self.current_token_tv!=('OP',')'):
+                    self.wskipline()
+                    if self.get().value=='=':
+                        name=self.current_token.value
+                        self.next(2)
+                        args.append((name,self.parse_expression()))
+                    else: args.append(self.parse_expression())
+                    self.wskipline()
+                    if self.current_token_tv==('OP',','): self.next()
+                    self.wskipline()
+                self.wskipline()
+                self.expect('OP',')')
+                return data.Call(_.value,args)
+            else:
+                _=self.expect('IDENT')
+                if _: return data.Variable(_.value)
+                else: return data.Variable('')
+        elif self.current_token.type == 'STRING':
+            _ = self.expect('STRING')
+            return data.Literal(_.value)
+        else: self.error('unknown_primary','NUMBER | IDENT | STRING')
         if self.next(): return data.Literal('')
         return data.Literal('')
 
@@ -236,6 +266,9 @@ class Parser:
             p.append(data.Parm(name,type_))
             if self.current_token_tv==('OP',','): self.expect('OP',',')
         return p
+
+    def parse_expr_only(self) -> data.Expr:
+        return self.parse_expression()
 
     # === blocks ===
 
@@ -401,7 +434,7 @@ class Parser:
             _body=self.parse_block()
             self.expect('OP','}')
             self.expect('END')
-            return [util.let(str(_ident),_start,True),data.While(_cond,[_body,_upda])]
+            return [util.let(str(_ident),_start,True),data.While(_cond,_body+[_upda])]
         else: self.error('invalid_syntax_for')
         return []
 

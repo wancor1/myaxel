@@ -93,13 +93,18 @@ class Variable:
 
 @dataclass
 class Binary:
-    left:Literal|Variable|Binary
+    left:Literal|Variable|Binary|Call|Unary
     op:str
-    right:Literal|Variable|Binary
+    right:Literal|Variable|Binary|Call|Unary
 
 @dataclass
 class Assign:
     name:str
     value:Expr
+
+@dataclass
+class Unary:
+    op:str
+    operand:Literal|Variable|Binary|Call|Unary
 
 # ==========

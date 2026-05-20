@@ -24,7 +24,7 @@ for i in 0..10{
     let x=x;
 };
 
-for(x=0,x>10,i++){
+for(x=0,x<10,i++){
     let x=x;
 };
 

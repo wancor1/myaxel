@@ -8,9 +8,11 @@ OPERATORS,RESERVED_WORD,ARE,SPACES,LINES,END,COMMENT=const.OPERATORS,const.RESER
 Token=data.Token
 
 class Lexer:
-    def __init__(self,path:str):
-        self.file_path:str=path
-        self.file:str=self.load_file(path)
+    def __init__(self,path:str='',source:str=''):
+        if source:
+            self.file:str=source
+        else:
+            self.file:str=self.load_file(path)
         self.filelen:int=len(self.file)
         self.current:int=0
         self.current_char=self.file[self.current] if self.file else ''

@@ -1,6 +1,7 @@
 import core.initialization   as _initialization
 import frontend.lexer as _lexer
 import frontend.parser as _parser
+import backend.interpreter.interpreter as _interpreter
 import data.const as const
 import data.store as store
 
@@ -28,6 +29,14 @@ def run_Parser(token):
             for i,l in enumerate(parsed[1], start=1):
                 print(f'[{i}]\n{l.text}',end='\n'*2)
             print(f'{'='*(N+5)}')
+    return parsed
+
+def run_Interpreter(program):
+    if store.debug: print(f'\n{'='*N}Interpreter output{'='*N}')
+    interpreter=_interpreter.Interpreter()
+    mon=interpreter.main(program)
+    if store.debug: print(f'\n{'='*N}{'='*len('Interpreter output')}{'='*N}')
+    return mon
 
 if __name__=="__main__":
     if store.debug: print('start initialization...')
@@ -38,4 +47,6 @@ if __name__=="__main__":
         print(f'{'='*(N*2+4)}')
         print('Starting frontend...')
     tokens=run_Lexer()
-    run_Parser(tokens)
+    parsed=run_Parser(tokens)
+    if not parsed[1]:
+        run_Interpreter(parsed[0])
