@@ -1,12 +1,11 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import data.const as const
 import data.store as store
 import data.data as data
 import util.util as util
 
 from typing import Any
-
-#Token=data.Token
-ErrorFormat=data.ErrorFormat
 
 class Parser:
     def __init__(self,tokens:list[data.Token]) -> None:
@@ -41,33 +40,33 @@ class Parser:
     def error(self,type:str,needed=None) -> None:
         line,col=self.current_token.line,self.current_token.column
         if type=='unknown_keyword':
-            self.errors.append(ErrorFormat(type,f'Unknown keyword error:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Unknown keyword error:\n  {self.current_token}',line,col,needed))
         elif type=='invalid_syntax_for':
-            self.errors.append(ErrorFormat(type,f'invalid for loop syntax:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'invalid for loop syntax:\n  {self.current_token}',line,col,needed))
         elif type=='wrong_for_ident':
-            self.errors.append(ErrorFormat(type,f'error for loop ident:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'error for loop ident:\n  {self.current_token}',line,col,needed))
         elif type=='expression_isnone':
-            self.errors.append(ErrorFormat(type,f'Expression is None:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Expression is None:\n  {self.current_token}',line,col,needed))
         elif type=='condition_isnone':
-            self.errors.append(ErrorFormat(type,f'Condition is None:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Condition is None:\n  {self.current_token}',line,col,needed))
         elif type=='unexpected_type':
-            self.errors.append(ErrorFormat(type,f'Unknown type error:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Unknown type error:\n  {self.current_token}',line,col,needed))
         elif type=='unexpected_value':
-            self.errors.append(ErrorFormat(type,f'Unknown value error:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Unknown value error:\n  {self.current_token}',line,col,needed))
         elif type=='unexpected_primary':
-            self.errors.append(ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
         elif type=='not_crement':
-            self.errors.append(ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
         elif type=='forgot_end':
-            self.errors.append(ErrorFormat(type,f'Maybe you forgot the end:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Maybe you forgot the end:\n  {self.current_token}',line,col,needed))
         elif type=='howd_it_get_here':
-            self.errors.append(ErrorFormat(type,f'How did it get to this point in the process?\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'How did it get to this point in the process?\n  {self.current_token}',line,col,needed))
         elif type=='wrong_pos_end':
-            self.errors.append(ErrorFormat(type,f'end...??\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'end...??\n  {self.current_token}',line,col,needed))
         elif type=='dontcry':
-            self.errors.append(ErrorFormat(type,f'Don\'t cry, it\'s okay.\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Don\'t cry, it\'s okay.\n  {self.current_token}',line,col,needed))
         else:
-            self.errors.append(ErrorFormat(type,f'Unexpected error:\n  {self.current_token}',line,col,needed))
+            self.errors.append(data.ErrorFormat(type,f'Unexpected error:\n  {self.current_token}',line,col,needed))
         self.skip()
 
     def skip(self) -> None:
@@ -216,6 +215,7 @@ class Parser:
         elif self.current_token.type == 'STRING':
             _ = self.expect('STRING')
             return data.Literal(_.value)
+        elif self.current_token.value in ('true','false'): return data.Literal(self.expect('KEYWORD').value)
         else: self.error('unknown_primary','NUMBER | IDENT | STRING')
         if self.next(): return data.Literal('')
         return data.Literal('')

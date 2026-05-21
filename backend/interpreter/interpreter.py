@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import data.data as data
 import data.exception as exception
 import frontend.lexer as _lexer
@@ -13,10 +15,7 @@ class Interpreter:
         print(f'{wte}:{node}')
 
     def eval(self,node):
-        if isinstance(node,data.Literal):
-            if '.' in str(node.value): return float(node.value)
-            elif node.value.lstrip("-").isdecimal(): return int(node.value)
-            if node.value.startswith('"') or node.value.startswith("'"): return self.eval_string(str(node.value[1:-1]))
+        if isinstance(node,data.Literal):       return self.eval_literal(node)
         elif isinstance(node,data.Variable):    return self.eval_variable(node)
         elif isinstance(node,data.Expr):        return self.eval(node.value[0])
         elif isinstance(node,data.Binary):
@@ -48,8 +47,7 @@ class Interpreter:
                     for stmt in node.body:
                         if isinstance(stmt,list):
                             for s in stmt: self.eval(s)
-                        else:
-                            self.eval(stmt)
+                        else: self.eval(stmt)
                 except exception.ContinueException: continue
                 except exception.BreakException:    break
         elif isinstance(node,data.Break):       raise exception.BreakException(node)
@@ -68,16 +66,22 @@ class Interpreter:
                 for param,arg in zip(fn.params,node.args):
                     if param: fnenv.define(param.name,self.eval(arg),param.type_,False,'')
                 try:
-                    for bod in fn.body:
-                        self.eval(bod)
+                    for bod in fn.body: self.eval(bod)
                 except exception.ReturnException as e: return e.value
                 finally: self.env=prev
+
+    def eval_literal(self,node:data.Literal):
+        if '.' in str(node.value): return float(node.value)
+        elif node.value.lstrip("-").isdecimal(): return int(node.value)
+        elif node.value.startswith('"') or node.value.startswith("'"): return self.eval_string(str(node.value[1:-1]))
+        elif node.value=='true': return True
+        elif node.value=='false': return False
 
     def eval_variable(self,node:data.Variable):
         try:
             return self.env.get(node.name)
         except exception.UndefinedVariableException as e:
-            self.error(node,f'Undefined variable')
+            self.error(e,f'Undefined variable')
             return None
 
     def eval_string(self,s:str,args:list|None=None) -> str:
@@ -89,27 +93,32 @@ class Interpreter:
                 idx+=1;evl+=2
             elif s[evl]=='{':
                 j=s.index('}',evl)
-                expr=s[evl+1:j]
-                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=expr).main()).parse_expr_only()))
+                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j]).main()).parse_expr_only()))
                 evl=j+1
             else:
                 result+=s[evl]
                 evl+=1
         return result
 
-    def func_print(self,node:data.Call) -> None:
+    def func_print(self,node:data.Call) -> str:
         if len(node.args) > 1:
             t=self.eval(node.args[0])
             g=[self.eval(a) for a in node.args[1:]]
-            return print(self.eval_string(t,g),end='')
-        return print(self.eval(*node.args),end='')
+            _=self.eval_string(t,g)
+        else:
+            _=self.eval(*node.args)
+        print(_,end='')
+        return _
 
-    def func_println(self,node:data.Call):
+    def func_println(self,node:data.Call) -> str:
         if len(node.args) > 1:
             t=self.eval(node.args[0])
             g=[self.eval(a) for a in node.args[1:]]
-            return print(self.eval_string(t,g))
-        return print(self.eval(*node.args))
+            _=self.eval_string(t,g)
+        else:
+            _=self.eval(*node.args)
+        print(_)
+        return _
 
     def main(self,program:data.Program):
         for stmt in program.statements:

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import data.const as const
 import data.data as data
 import data.store as store

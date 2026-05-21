@@ -569,3 +569,9 @@ Lv5 - 通知（null染まりなど意図した動作の通知）
 ```
 - デフォルト表示はLv3以上
 - `myaxel-lint`：改善提案・コードスタイル・パフォーマンス警告（別枠）
+
+---
+
+## Licence
+
+SPDX-License-Identifier: CC-BY-4.0

@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: CC0-1.0
+
+let x = true;
+println(x);
+let y = false;
+println(y);
+let z = 1 > 0;
+println(z);
+if (x) {
+    println("yes");
+};

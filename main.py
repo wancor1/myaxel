@@ -1,4 +1,6 @@
-import core.initialization   as _initialization
+# SPDX-License-Identifier: MPL-2.0
+
+import core.initialization as _initialization
 import frontend.lexer as _lexer
 import frontend.parser as _parser
 import backend.interpreter.interpreter as _interpreter

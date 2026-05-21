@@ -1,8 +1,6 @@
 __pycache__
 
-
-.draft/test.txt
-.draft/todo.md
+.draft
 
 test.py
 

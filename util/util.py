@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import data.data as data
 
 def increment(ident:str) -> data.Assign:

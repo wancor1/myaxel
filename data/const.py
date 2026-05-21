@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import os
 
 EXT=".myx"
@@ -54,6 +56,7 @@ RESERVED_WORD=[
     'import','use',
     'pass',
     'in','as',
+    'true','false',
     'int','uint','float','str','bool','null',
     'i4','i8','i6','i32','i64','i128','i256',
     'u4','u8','u6','u32','u64','u128','u256',

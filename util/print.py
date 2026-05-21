@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: MPL-2.0
+
 import multiprocessing as mp
 import os,platform,time,atexit
 
