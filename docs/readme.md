@@ -1,7 +1,7 @@
 # myaxel
 
 <img src='.\pic\icon256.png' alt='icon' width=50></img>
-myaxel
+myaxel  
 Programming Language
 
 ## Name Origin
@@ -23,13 +23,14 @@ This language aims for something in between!
 
 SPDX-License-Identifier: CC-BY-4.0  
 
+
 Core source code: MPL-2.0  
 Examples: CC0-1.0  
 Documentation: CC-BY-4.0  
 
 Code snippets inside documentation are licensed under CC0-1.0 unless otherwise noted.  
-
-myaxel
+  
+myaxel  
 ├─ core/      -> MPL-2.0  
 ├─ util/      -> MPL-2.0  
 ├─ data/      -> MPL-2.0  
