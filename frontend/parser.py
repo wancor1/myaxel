@@ -323,7 +323,7 @@ class Parser:
 
     def parse_if(self) -> data.If:
         elifs=[]
-        els=None
+        els:data.If=data.If(data.Expr([]),[],[])
         con=data.Expr([])
         elcon=data.Expr([])
         self.expect('KEYWORD','if')
@@ -338,7 +338,7 @@ class Parser:
         self.expect('OP','}'); self.wskipline()
         if self.current_token.type=='END':
             self.next()
-            return data.If(con,ifbod,None)
+            return data.If(con,ifbod,[])
         while self.current_token_tv==('KEYWORD','elif'):
             self.expect('KEYWORD','elif')
             self.expect('OP','('); self.wskipline()
@@ -353,7 +353,7 @@ class Parser:
         if self.current_token_tv==('KEYWORD','else'):
             self.expect('KEYWORD','else')
             self.expect('OP','{')
-            els=self.parse_block()
+            els=self.parse_block()[0]
             self.expect('OP','}')
         if self.current_token.type=='END':
             self.next()

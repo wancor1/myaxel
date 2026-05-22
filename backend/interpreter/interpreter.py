@@ -4,8 +4,9 @@ import data.data as data
 import data.exception as exception
 import frontend.lexer as _lexer
 import frontend.parser as _parser
-import backend.interpreter.interpreter as _interpreter
 import backend.interpreter.environment as environment
+
+import math
 
 class Interpreter:
     def __init__(self):
@@ -58,6 +59,21 @@ class Interpreter:
             if node.name=='print':      return self.func_print(node)
             elif node.name=='println':  return self.func_println(node)
             elif node.name=='abs':      return abs(*[self.eval(i) for i in node.args])
+            elif node.name=='floor': 
+                if not node.args: return self.error(node,"floor() requires exactly 1 argument")
+                val=self.eval(node.args[0])
+                if not isinstance(val,(int, float)): return self.error(node,"floor() requires a numeric argument")
+                return math.floor(val)
+            elif node.name=='ceil': 
+                if not node.args: return self.error(node,"ceil() requires exactly 1 argument")
+                val=self.eval(node.args[0])
+                if not isinstance(val,(int, float)): return self.error(node,"ceil() requires a numeric argument")
+                return math.ceil(val)
+            elif node.name=='round': 
+                if not node.args: return self.error(node,"round() requires exactly 1 argument")
+                val=self.eval(node.args[0])
+                if not isinstance(val,(int, float)): return self.error(node,"round() requires a numeric argument")
+                return math.floor(val+0.5)
             fn=self.env.get(node.name)
             if isinstance(fn,data.Fn):
                 fnenv=environment.Environment(self.env)

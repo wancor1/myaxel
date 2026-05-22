@@ -39,7 +39,7 @@ class Let:
 class If:
     condition:Expr
     body:list
-    else_:list|None
+    else_:list
 
 @dataclass
 class Fn:

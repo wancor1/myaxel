@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: CC0-1.0
+
+let mut i = 1;
+while (i <= 15) {
+    println("debug> {}", i);
+    if (floor(i / 3) * 3 == i) {
+        if (floor(i / 5) * 5 == i) {
+            println("FizzBuzz");
+        } else {
+            println("Fizz");
+        };
+    } else {
+        if (floor(i / 5) * 5 == i) {
+            println("Buzz");
+        } else {
+            println("{}", i);
+        };
+    };
+    i=i+1;
+};
