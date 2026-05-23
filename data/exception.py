@@ -9,3 +9,10 @@ class ReturnException(Exception):
 
 class UndefinedVariableException(Exception):
     def __init__(self,name): self.name=name
+
+class UndefinedBinaryException(Exception):
+    def __init__(self,name): self.name=name
+
+class UnknownException(Exception):
+    def __init__(self,value): self.value=value
+    

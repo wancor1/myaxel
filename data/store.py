@@ -3,3 +3,4 @@
 import os
 
 debug=False
+fromlexer=False

@@ -19,7 +19,7 @@ class Parser:
 
     def next(self,c:int=1) -> bool:
         for i in range(c):
-            if store.debug: print(self.current_token)
+            if store.debug and store.fromlexer: print(self.current_token)
             self.current+=1
             if self.current < len(self.tokens):
                 self.blocker=0
@@ -105,7 +105,8 @@ class Parser:
         elif self.current_token.type=='LINE':   self.next()
         elif self.current_token.type=='IDENT':
             if self.get().value in const.IDC:   return self.parse_crement()
-            if self.get().value=='(':           return self.parse_funccall()
+            elif self.get().value=='(':         return self.parse_funccall()
+            elif self.get().value=='.':         return self.parse_access()
             else:                               return self.parse_assign()
         elif self.current_token.type=='KEYWORD':
             if self.current_token.value=='let':         return self.parse_let()
@@ -116,6 +117,8 @@ class Parser:
             elif self.current_token.value=='return':    return self.parse_return()
             elif self.current_token.value=='break':     return self.parse_break()
             elif self.current_token.value=='continue':  return self.parse_continue()
+            elif self.current_token.value=='import':    return self.parse_import()
+            elif self.current_token.value=='use':       return self.parse_use()
             else: self.error('unknown_keyword')
         elif self.current_token.type=='END':
             if self.get().type=='END':
@@ -181,7 +184,7 @@ class Parser:
             return data.Binary(l,o,r)
         return l
 
-    def parse_primary(self) -> data.Literal | data.Variable | data.Call | data.Unary:
+    def parse_primary(self) -> data.Literal | data.Variable | data.Call | data.Unary | data.Access | data.MethodCall:
         if self.current_token.type == 'OP' and self.current_token.value == '-':
             self.next()
             return data.Unary('-', self.parse_primary())
@@ -208,6 +211,8 @@ class Parser:
                 self.wskipline()
                 self.expect('OP',')')
                 return data.Call(_.value,args)
+            elif self.get().value=='.':
+                return self.parse_access()
             else:
                 _=self.expect('IDENT')
                 if _: return data.Variable(_.value)
@@ -456,6 +461,43 @@ class Parser:
         self.wskipline()
         self.expect('OP',')');self.expect('END')
         return data.Call(n,args)
+
+    def parse_import(self) -> data.Import:
+        self.expect('KEYWORD','import')
+        path=self.expect('IDENT').value
+        self.expect('END')
+        return data.Import(path)
+
+    def parse_access(self) -> data.Access|data.MethodCall:
+        id=self.expect('IDENT').value
+        self.wskipline()
+        self.expect('OP','.')
+        m=self.expect('IDENT').value
+        if self.current_token_tv==('OP','('):
+            self.expect('OP','(')
+            self.wskipline()
+            args:list[data.Expr|tuple]=[]
+            while self.current_token_tv!=('OP',')'):
+                self.wskipline()
+                if self.get().value=='=':
+                    name=self.current_token.value
+                    self.next(2)
+                    args.append((name,self.parse_expression()))
+                else: args.append(self.parse_expression())
+                self.wskipline()
+                if self.current_token_tv==('OP',','): self.next()
+                self.wskipline()
+            self.expect('OP',')')
+            return data.MethodCall(id,m,args)
+        return data.Access(id,m)
+
+    def parse_use(self):
+        self.expect('KEYWORD','use')
+        m=self.expect('IDENT').value
+        self.expect('OP','.')
+        n=self.expect('IDENT').value
+        self.expect('END')
+        return data.Use(m,n)
 
     # ===== END =====
 

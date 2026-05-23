@@ -65,6 +65,15 @@ class While:
     condition:Expr
     body:list
 
+@dataclass
+class Import:
+    path:str
+
+@dataclass
+class Use:
+    module:str
+    name:str
+
 # ===
 
 @dataclass
@@ -95,9 +104,9 @@ class Variable:
 
 @dataclass
 class Binary:
-    left:Literal|Variable|Binary|Call|Unary
+    left:Literal|Variable|Binary|Call|Unary|Access|MethodCall
     op:str
-    right:Literal|Variable|Binary|Call|Unary
+    right:Literal|Variable|Binary|Call|Unary|Access|MethodCall
 
 @dataclass
 class Assign:
@@ -107,6 +116,17 @@ class Assign:
 @dataclass
 class Unary:
     op:str
-    operand:Literal|Variable|Binary|Call|Unary
+    operand:Literal|Variable|Binary|Call|Unary|Access|MethodCall
+
+@dataclass
+class Access:
+    obj:str
+    member:str
+
+@dataclass
+class MethodCall:
+    obj: str
+    method: str
+    args: list
 
 # ==========

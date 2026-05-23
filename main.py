@@ -12,6 +12,7 @@ N=25
 def Initialization():
     setting=_initialization.Initialization()
     setting.main()
+    store.fromlexer=True
 
 def run_Lexer():
     if store.debug: print(f'\n{'='*N}Lexer output{'='*N}')
@@ -34,6 +35,7 @@ def run_Parser(token):
     return parsed
 
 def run_Interpreter(program):
+    store.fromlexer=False
     if store.debug: print(f'\n{'='*N}Interpreter output{'='*N}')
     interpreter=_interpreter.Interpreter()
     mon=interpreter.main(program)
