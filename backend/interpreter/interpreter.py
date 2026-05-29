@@ -20,24 +20,14 @@ class Interpreter:
         if isinstance(node,data.Literal):       return self.eval_literal(node)
         elif isinstance(node,data.Variable):    return self.eval_variable(node)
         elif isinstance(node,data.Expr):        return self.eval(node.value[0])
+        elif isinstance(node,data.Array):       return [self.eval(i) for i in node.elements]
+        elif isinstance(node,data.Index):       return self.eval(node.array)[self.eval(node.index)]
         elif isinstance(node,data.Binary):      return self.eval_binary(node)
         elif isinstance(node,data.Let):         self.env.define(node.name,self.eval(node.value) if node.value else None,node.type_,node.mutable,node.overflow)
         elif isinstance(node,data.Assign):      self.env.set(node.name,self.eval(node.value))
-        elif isinstance(node, data.Unary):      return self.eval_unary(node)
-        elif isinstance(node,data.If):
-            if self.eval(node.condition):
-                for stmt in node.body:  self.eval(stmt)
-            elif node.else_:
-                for stmt in node.else_: self.eval(stmt)
-        elif isinstance(node,data.While):
-            while self.eval(node.condition):
-                try:
-                    for stmt in node.body:
-                        if isinstance(stmt,list):
-                            for s in stmt: self.eval(s)
-                        else: self.eval(stmt)
-                except exception.ContinueException: continue
-                except exception.BreakException:    break
+        elif isinstance(node,data.Unary):       return self.eval_unary(node)
+        elif isinstance(node,data.If):          return self.eval_if(node)
+        elif isinstance(node,data.While):       return self.eval_while(node)
         elif isinstance(node,data.Break):       raise exception.BreakException(node)
         elif isinstance(node,data.Continue):    raise exception.ContinueException(node)
         elif isinstance(node,data.Return):      raise exception.ReturnException(self.eval(node.value) if node.value else None)
@@ -78,9 +68,7 @@ class Interpreter:
 
     def eval_variable(self,node:data.Variable):
         try: return self.env.get(node.name)
-        except exception.UndefinedVariableException as e:
-            self.error(e,f'Undefined variable')
-            return None
+        except exception.UndefinedVariableException as e: self.error(e,f'Undefined variable'); return None
 
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)
@@ -108,6 +96,22 @@ class Interpreter:
     def eval_unary(self,node:data.Unary):
         if node.op=='-': return -self.eval(node.operand)
         elif node.op=='~':  return ~int(self.eval(node.operand))
+
+    def eval_if(self,node:data.If):
+        if self.eval(node.condition):
+            for stmt in node.body:  self.eval(stmt)
+        elif node.else_:
+            for stmt in node.else_: self.eval(stmt)
+
+    def eval_while(self,node:data.While):
+        while self.eval(node.condition):
+            try:
+                for stmt in node.body:
+                    if isinstance(stmt,list):
+                        for s in stmt: self.eval(s)
+                    else: self.eval(stmt)
+            except exception.ContinueException: continue
+            except exception.BreakException:    break
 
     def eval_call(self,node:data.Call):
         if node.name=='print':      return self.func_print(node)

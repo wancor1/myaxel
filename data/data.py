@@ -104,9 +104,9 @@ class Variable:
 
 @dataclass
 class Binary:
-    left:Literal|Variable|Binary|Call|Unary|Access|MethodCall
+    left:x
     op:str
-    right:Literal|Variable|Binary|Call|Unary|Access|MethodCall
+    right:x
 
 @dataclass
 class Assign:
@@ -116,7 +116,7 @@ class Assign:
 @dataclass
 class Unary:
     op:str
-    operand:Literal|Variable|Binary|Call|Unary|Access|MethodCall
+    operand:x
 
 @dataclass
 class Access:
@@ -129,4 +129,15 @@ class MethodCall:
     method: str
     args: list
 
+@dataclass
+class Array:
+    elements:list
+
+@dataclass
+class Index:
+    array:x
+    index:Expr
+
 # ==========
+
+x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index

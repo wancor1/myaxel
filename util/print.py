@@ -1,13 +1,15 @@
-# SPDX-License-Identifier: MPL-2.0
+# SPDX-License-Identifier: Apache-2.0 license
 
 import multiprocessing as mp
 import os,platform,time,atexit
+import threading
 
 ENC="shift_jis" if platform.system()=="Windows" else "utf-8"
 
 class UltraPipePrint:
     def __init__(self,buffer_size=65536,flush_interval=0.05) -> None:
         self._parent_conn,child_conn=mp.Pipe()
+        self._lock=threading.Lock()
         self._local_buffer=[]
         self._local_size=0
         self._buffer_size=buffer_size
@@ -44,12 +46,13 @@ class UltraPipePrint:
         if buffer: write(fd,b"".join(buffer))
 
     def __call__(self,*args,sep=" ",end="\n") -> None:
-        msg=sep.join(map(str,args))+end
-        data=msg.encode(ENC,errors="replace")
-        self._local_buffer.append(data)
-        self._local_size+=len(data)
-        if self._local_size>=self._buffer_size:
-            self._flush_local()
+        with self._lock:
+            msg=sep.join(map(str,args))+end
+            data=msg.encode(ENC,errors="replace")
+            self._local_buffer.append(data)
+            self._local_size+=len(data)
+            if self._local_size>=self._buffer_size:
+                self._flush_local()
 
     def _flush_local(self) -> None:
         if not self._local_buffer: return
@@ -61,7 +64,7 @@ class UltraPipePrint:
 
     def close(self) -> None:
         if not self._process.is_alive(): return
-        self._flush_local()
+        with self._lock: self._flush_local()
         try:
             self._parent_conn.send_bytes(b"__CLOSE__")
         except: pass
@@ -70,8 +73,12 @@ class UltraPipePrint:
             self._process.terminate()
 
 _instance=None
+_instance_lock=threading.Lock()
+
 def get_async_print():
     global _instance
-    if _instance is None:
-        _instance=UltraPipePrint()
+    with _instance_lock:
+        if _instance is None:
+            _instance=UltraPipePrint()
     return _instance
+    

@@ -1,4 +1,4 @@
 // SPDX-License-Identifier: CC0-1.0
 
- [1, 2, 3]
- 
+let x=[1, 2, 3];
+print(x[1]);
