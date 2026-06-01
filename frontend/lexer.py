@@ -7,26 +7,22 @@ from util.print import get_async_print
 
 DIRPATH,FILENAME=const.DIRPATH,const.FILENAME
 OPERATORS,RESERVED_WORD,ARE,SPACES,LINES,END,COMMENT=const.OPERATORS,const.RESERVED_WORD,const.ARE,const.SPACES,const.LINES,const.END,const.COMMENT
-Token=data.Token
 
 class Lexer:
     def __init__(self,path:str='',source:str=''):
-        if source:
-            self.file:str=source
-        else:
-            self.file:str=self.load_file(path)
+        if source: self.file:str=source
+        else: self.file:str=self.load_file(path)
         self.filelen:int=len(self.file)
         self.current:int=0
-        self.current_char=self.file[self.current] if self.file else ''
+        self.current_char:str=self.file[self.current] if self.file else ''
         self.output:list=[]
         self.stack:list=[]
         self.line:int=1
         self.column:int=1
-
         self.aprint=get_async_print()
 
     def load_file(self,path:str) -> str:
-        with open(path) as f: return f.read()
+        with open(path,encoding="utf-8") as f: return f.read()
 
     def next(self) -> None:
         self.current+=1
@@ -40,14 +36,15 @@ class Lexer:
         if not value: return
         vlen = column if column is not None else self.column - len(value)
         vline = line if line is not None else self.line
-        if value in RESERVED_WORD:                              self.output.append(Token('KEYWORD',value,vline,vlen))
-        elif value in LINES:                                    self.output.append(Token('LINE'   ,value,vline,vlen))
-        elif value[:2] in COMMENT:                              self.output.append(Token('COMMENT',value,vline,vlen))
-        elif value in OPERATORS:                                self.output.append(Token('OP'     ,value,vline,vlen))
-        elif value in END:                                      self.output.append(Token('END'    ,value,vline,vlen))
-        elif value.replace('.', '', 1).isdigit():               self.output.append(Token('NUMBER' ,value,vline,vlen))
-        elif value.startswith('"') or value.startswith("'"):    self.output.append(Token('STRING' ,value,vline,vlen))
-        else:                                                   self.output.append(Token('IDENT'  ,value,vline,vlen))
+        if value in RESERVED_WORD:                              self.output.append(data.Token('KEYWORD',value,vline,vlen))
+        elif value in LINES:                                    self.output.append(data.Token('LINE'   ,value,vline,vlen))
+        elif value[:2] in COMMENT:                              self.output.append(data.Token('COMMENT',value,vline,vlen))
+        elif value in OPERATORS:                                self.output.append(data.Token('OP'     ,value,vline,vlen))
+        elif value in END:                                      self.output.append(data.Token('END'    ,value,vline,vlen))
+        elif value.replace('.', '', 1).isdigit():               self.output.append(data.Token('NUMBER' ,value,vline,vlen))
+        elif value.startswith('"') or value.startswith("'"):    self.output.append(data.Token('STRING' ,value,vline,vlen))
+        elif value.startswith('f"') or value.startswith("f'"):  value[:1];self.output.append(data.Token('FSTRING',value,vline,vlen))
+        else:                                                   self.output.append(data.Token('IDENT'  ,value,vline,vlen))
 
     def main(self):
         while self.current<self.filelen:

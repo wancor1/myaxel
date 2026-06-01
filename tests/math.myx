@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: CC0-1.0
 
 fn sqrt(x){
     return x**0.5;

@@ -189,6 +189,7 @@ class Parser:
         elif self.current_token.type=='NUMBER':             return data.Literal(self.expect('NUMBER').value)
         elif self.current_token.type=='IDENT':              return self.parse_primary_ident()
         elif self.current_token.type=='STRING':             return data.Literal(self.expect('STRING').value)
+        elif self.current_token.type=='FSTRING':            return data.Literal(self.expect('FSTRING').value,True)
         elif self.current_token.value in ('true','false'):  return data.Literal(self.expect('KEYWORD').value)
         elif self.current_token_tv==('OP','['):             return self.parse_primary_list()
         else: self.error('unknown_primary','NUMBER | IDENT | STRING')

@@ -47,7 +47,7 @@ if __name__=="__main__":
     Initialization()
     if store.debug:
         print(f'{'='*N}file{'='*N}')
-        with open(const.FILEPATH) as f: print(f.read())
+        with open(const.FILEPATH,encoding="utf-8") as f: print(f.read())
         print(f'{'='*(N*2+4)}')
         print('Starting frontend...')
     tokens=run_Lexer()

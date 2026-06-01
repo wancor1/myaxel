@@ -9,6 +9,8 @@ import backend.interpreter.environment as environment
 
 import math,os
 
+_NOTFOUND = object()
+
 class Interpreter:
     def __init__(self):
         self.env=environment.Environment()
@@ -60,9 +62,11 @@ class Interpreter:
     # === ===
 
     def eval_literal(self,node:data.Literal):
-        if '.' in str(node.value): return float(node.value)
+        if node.value.startswith('"') or node.value.startswith("'"):
+            if node.fs: return self.eval_string(str(node.value[1:-1]))
+            else: return str(node.value[1:-1])
         elif node.value.lstrip("-").isdecimal(): return int(node.value)
-        elif node.value.startswith('"') or node.value.startswith("'"): return self.eval_string(str(node.value[1:-1]))
+        elif '.' in str(node.value): return float(node.value)
         elif node.value=='true': return True
         elif node.value=='false': return False
 
@@ -114,35 +118,21 @@ class Interpreter:
             except exception.BreakException:    break
 
     def eval_call(self,node:data.Call):
-        if node.name=='print':      return self.func_print(node)
-        elif node.name=='println':  return self.func_println(node)
-        elif node.name=='abs':      return abs(*[self.eval(i) for i in node.args])
-        elif node.name=='floor': 
-            if not node.args: return self.error(node,"floor() requires exactly 1 argument")
-            val=self.eval(node.args[0])
-            if not isinstance(val,(int, float)): return self.error(node,"floor() requires a numeric argument")
-            return math.floor(val)
-        elif node.name=='ceil': 
-            if not node.args: return self.error(node,"ceil() requires exactly 1 argument")
-            val=self.eval(node.args[0])
-            if not isinstance(val,(int, float)): return self.error(node,"ceil() requires a numeric argument")
-            return math.ceil(val)
-        elif node.name=='round': 
-            if not node.args: return self.error(node,"round() requires exactly 1 argument")
-            val=self.eval(node.args[0])
-            if not isinstance(val,(int, float)): return self.error(node,"round() requires a numeric argument")
-            return math.floor(val+0.5)
+        a=self.func_main(node)
+        if a is not _NOTFOUND: return a
         fn=self.env.get(node.name)
         if isinstance(fn,data.Fn):
             fnenv=environment.Environment(self.env)
             prev=self.env
             self.env=fnenv
+            _=None
             for param,arg in zip(fn.params,node.args):
                 if param: fnenv.define(param.name,self.eval(arg),param.type_,False,'')
             try:
                 for bod in fn.body: self.eval(bod)
-            except exception.ReturnException as e: return e.value
+            except exception.ReturnException as e: _=e.value
             finally: self.env=prev
+            return _
 
     def eval_import(self,node:data.Import):
         fpath=os.path.join(const.DIRPATH,node.path+const.EXT)
@@ -151,15 +141,16 @@ class Interpreter:
         self.env=menv
         self.main(_parser.Parser(_lexer.Lexer(fpath).main()).main()[0])
         self.env=penv
-        self.env.define(str(node.path),menv,'',False,'')
+        self.env.define(str(node.path),menv,'module',False,'')
 
-    def eval_methodcall(self,node:data.MethodCall):
+    def eval_methodcall(self,node:data.MethodCall) :
         mod=self.env.get(node.obj)
-        if isinstance(mod,environment.Environment):
-            p,self.env=self.env,mod
-            _=self.eval(data.Call(node.method,node.args))
-            self.env=p
-            return _
+        if isinstance(mod,environment.Environment) and self.env.get(node.obj,'type')=='module':
+            if isinstance(mod,environment.Environment): # ex) math.sqrt(2);
+                p,self.env=self.env,mod
+                _=self.eval(data.Call(node.method,node.args))
+                self.env=p
+                return _
 
     def eval_use(self,node:data.Use):
         n=self.env.get(node.module)
@@ -170,6 +161,52 @@ class Interpreter:
         if isinstance(n:=self.env.get(node.obj),environment.Environment): return n.get(node.member)
 
     # === func ===
+
+    def func_main(self,node:data.Call):
+        if node.name=='print':      return self.func_print(node)
+        elif node.name=='println':  return self.func_println(node)
+        # === util ===
+        elif node.name=='type':
+            if not node.args: return self.error(node,"type() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"type() requires exactly 1 argument")
+            return str(self.env.variable[node.args[0].value[0].name]['type'])
+        elif node.name=='dir':
+            if not node.args: return self.error(node,"dir() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"dir() requires exactly 1 argument")
+            return str(self.env.variable[node.args[0].value[0].name])
+        elif node.name=='vars':
+            if not node.args: return self.error(node,"vars() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"vars() requires exactly 1 argument")
+            return str(self.env.variable[node.args[0].value[0].name]['value'].__getstate__())
+        # === math ===
+        elif node.name=='abs':
+            if not node.args: return self.error(node,"abs() requires exactly 1 argument")
+            val=self.eval(node.args[0])
+            if isinstance(val,(int,float)): return abs(val)
+            elif isinstance(val,list): return [abs(i) for i in val]
+            else: return self.error(node,"abs() requires a numeric argument")
+        elif node.name=='floor': 
+            if not node.args: return self.error(node,"floor() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"floor() requires exactly 1 argument")
+            val=self.eval(node.args[0])
+            if not isinstance(val,(int,float)): return self.error(node,"floor() requires a numeric argument")
+            return math.floor(val)
+        elif node.name=='ceil': 
+            if not node.args: return self.error(node,"ceil() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"ceil() requires exactly 1 argument")
+            val=self.eval(node.args[0])
+            if not isinstance(val,(int,float)): return self.error(node,"ceil() requires a numeric argument")
+            return math.ceil(val)
+        elif node.name=='round': 
+            if not node.args: return self.error(node,"round() requires exactly 1 argument")
+            elif len(node.args)>1: return self.error(node,"round() requires exactly 1 argument")
+            val=self.eval(node.args[0])
+            if not isinstance(val,(int,float)): return self.error(node,"round() requires a numeric argument")
+            return math.floor(val+0.5)
+        # === array ===
+        elif node.name=='add':
+            pass # wip
+        return _NOTFOUND
 
     def func_print(self,node:data.Call) -> str:
         if len(node.args) > 1:

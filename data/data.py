@@ -97,6 +97,7 @@ class Expr:
 @dataclass
 class Literal:
     value:str
+    fs:bool=False
 
 @dataclass
 class Variable:

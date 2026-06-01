@@ -1,4 +1,15 @@
 // SPDX-License-Identifier: CC0-1.0
 
+/*
 let x=[1, 2, 3];
-print(x[1]);
+x.add(2);
+print(x[-1]);
+*/
+
+import math;
+
+let x=math.sqrt(3);
+
+println(math.sqrt(3));
+let mut l=vars(math);
+println(l);
