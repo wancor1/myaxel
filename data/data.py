@@ -25,6 +25,12 @@ class ErrorFormat:
         if self.endline == -1: self.endline = self.line
         if self.endcol == -1: self.endcol = self.column
 
+@dataclass
+class ErrorFormatAST:
+    type:str
+    text:str
+    needed:str|None=None
+
 # ==========
 
 @dataclass

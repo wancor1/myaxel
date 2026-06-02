@@ -11,5 +11,4 @@ import math;
 let x=math.sqrt(3);
 
 println(math.sqrt(3));
-let mut l=vars(math);
-println(l);
+println(vars(math));

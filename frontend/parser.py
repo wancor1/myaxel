@@ -5,8 +5,6 @@ import data.store as store
 import data.data as data
 import util.util as util
 
-from typing import Any
-
 class Parser:
     def __init__(self,tokens:list[data.Token]) -> None:
         self.tokens:list[data.Token]=tokens
@@ -98,7 +96,7 @@ class Parser:
 
     # ===== parse =====
 
-    def parse_statement(self) -> Any:
+    def parse_statement(self) -> object:
         if self.blocker>=50: return 
         if self.current_token.type=='COMMENT':  self.next()
         elif self.current_token.type=='ERROR':  self.next()
@@ -264,7 +262,7 @@ class Parser:
             self.error('expression_isnone')
             return data.Assign('',data.Expr([]))
 
-    def parse_block(self,stop:tuple=('OP','}')) -> list[Any]:
+    def parse_block(self,stop:tuple=('OP','}')) -> list:
         blocks:list=[]
         while True:
             tm=self.parse_statement()
@@ -516,7 +514,7 @@ class Parser:
 
     # ===== END =====
 
-    def main(self) -> tuple[data.Program, list[Any]]:
+    def main(self) -> tuple[data.Program, list]:
         statements=[]
         while self.current < len(self.tokens):
             stmt=self.parse_statement()

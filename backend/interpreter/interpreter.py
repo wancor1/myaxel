@@ -76,6 +76,18 @@ class Interpreter:
 
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)
+        if node.op=='&&':
+            if not isinstance(l,bool): raise TypeError()
+            if not l: return False
+            r=self.eval(node.right)
+            if not isinstance(r,bool): raise TypeError()
+            return r
+        elif node.op=='||':
+            if not isinstance(l,bool): raise TypeError()
+            if l: return True
+            r=self.eval(node.right)
+            if not isinstance(r,bool): raise TypeError()
+            return r
         r=self.eval(node.right)
         if node.op=='+':    return l+r
         elif node.op=='-':  return l-r
@@ -88,8 +100,6 @@ class Interpreter:
         elif node.op=='>=': return l>=r
         elif node.op=='==': return l==r
         elif node.op=='!=': return l!=r
-        elif node.op=='&&': return l and r
-        elif node.op=='||': return l or r
         elif node.op=='&':  return int(l)&int(r)
         elif node.op=='|':  return int(l)|int(r)
         elif node.op=='^':  return int(l)^int(r)
