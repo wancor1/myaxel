@@ -14,9 +14,9 @@ _NOTFOUND = object()
 class Interpreter:
     def __init__(self):
         self.env=environment.Environment()
-        
+
     def error(self,node,wte:str):
-        print(f'{wte}:{node}')
+        raise exception.UnknownException(f'{wte};{node}')
 
     def eval(self,node):
         if isinstance(node,data.Literal):       return self.eval_literal(node)
@@ -69,6 +69,7 @@ class Interpreter:
         elif '.' in str(node.value): return float(node.value)
         elif node.value=='true': return True
         elif node.value=='false': return False
+        else: self.error(node,f'unknown literal value: {node.value}')
 
     def eval_variable(self,node:data.Variable):
         try: return self.env.get(node.name)
@@ -94,8 +95,8 @@ class Interpreter:
         elif node.op=='*':  return l*r
         elif node.op=='/':  return self.error(node,'div0error') if r==0 else l/r
         elif node.op=='**': return l**r
-        elif node.op=='<':  return l<r 
-        elif node.op=='>':  return l>r 
+        elif node.op=='<':  return l<r
+        elif node.op=='>':  return l>r
         elif node.op=='<=': return l<=r
         elif node.op=='>=': return l>=r
         elif node.op=='==': return l==r
@@ -154,21 +155,41 @@ class Interpreter:
         self.env.define(str(node.path),menv,'module',False,'')
 
     def eval_methodcall(self,node:data.MethodCall) :
-        mod=self.env.get(node.obj)
-        if isinstance(mod,environment.Environment) and self.env.get(node.obj,'type')=='module':
-            if isinstance(mod,environment.Environment): # ex) math.sqrt(2);
-                p,self.env=self.env,mod
-                _=self.eval(data.Call(node.method,node.args))
-                self.env=p
-                return _
+        mod=self.eval(node.obj)
+        if isinstance(mod,environment.Environment) and self.env.get(node.obj.name if isinstance(node.obj,data.Variable) else '','type')=='module':
+            p,self.env=self.env,mod
+            _=self.eval(data.Call(node.method,node.args))
+            self.env=p
+            return _
+        elif isinstance(mod,list):
+            lt=mod
+            if node.method=='add':
+                if not node.args: return self.error(node,"method add() requires exactly 1 argument")
+                elif len(node.args)>1: return self.error(node,"method add() requires exactly 1 argument")
+                lt.append(self.eval(node.args[0]))
+            elif node.method=='insert':
+                if not node.args or len(node.args)<2: return self.error(node,"method insert() requires exactly 2 argument")
+                elif len(node.args)>2: return self.error(node,"method insert() requires exactly 2 argument")
+                lt.insert(self.eval_int(node.args[1]),self.eval(node.args[0]))
+            elif node.method=='remove':
+                if not node.args: return self.error(node,"method remove() requires exactly 1 argument")
+                elif len(node.args)>1: return self.error(node,"method remove() requires exactly 1 argument")
+                lt.pop(self.eval_int(node.args[0]))
+            elif node.method=='rmvalue':
+                if not node.args: return self.error(node,"method rmvalue() requires exactly 1 argument")
+                elif len(node.args)>1: return self.error(node,"method rmvalue() requires exactly 1 argument")
+                t=self.eval(node.args[0])
+                lt[:]=[v for v in lt if v!=t]
 
     def eval_use(self,node:data.Use):
-        n=self.env.get(node.module)
-        if isinstance(n,environment.Environment):
-            self.env.define(node.name,n.get(node.name),'',False,'')
+        if isinstance(n:=self.env.get(node.module),environment.Environment): self.env.define(node.name,n.get(node.name),'',False,'')
 
     def eval_access(self,node:data.Access):
         if isinstance(n:=self.env.get(node.obj),environment.Environment): return n.get(node.member)
+
+    def eval_int(self,node) -> int:
+        if not isinstance(v:=self.eval(node),int): raise TypeError()
+        return v
 
     # === func ===
 
@@ -195,27 +216,24 @@ class Interpreter:
             if isinstance(val,(int,float)): return abs(val)
             elif isinstance(val,list): return [abs(i) for i in val]
             else: return self.error(node,"abs() requires a numeric argument")
-        elif node.name=='floor': 
+        elif node.name=='floor':
             if not node.args: return self.error(node,"floor() requires exactly 1 argument")
             elif len(node.args)>1: return self.error(node,"floor() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"floor() requires a numeric argument")
             return math.floor(val)
-        elif node.name=='ceil': 
+        elif node.name=='ceil':
             if not node.args: return self.error(node,"ceil() requires exactly 1 argument")
             elif len(node.args)>1: return self.error(node,"ceil() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"ceil() requires a numeric argument")
             return math.ceil(val)
-        elif node.name=='round': 
+        elif node.name=='round':
             if not node.args: return self.error(node,"round() requires exactly 1 argument")
             elif len(node.args)>1: return self.error(node,"round() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"round() requires a numeric argument")
             return math.floor(val+0.5)
-        # === array ===
-        elif node.name=='add':
-            pass # wip
         return _NOTFOUND
 
     def func_print(self,node:data.Call) -> str:

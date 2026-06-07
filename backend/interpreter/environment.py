@@ -11,7 +11,7 @@ class Environment:
         return self.variable
 
     def define(self,name:str,value,vtype:str,mut:bool,of:str) -> None:
-        if not name in self.variable: self.variable[name]={'value': value,'type': vtype,'mut':mut,'overflow':of}
+        self.variable[name]={'value': value,'type': vtype,'mut':mut,'overflow':of}
 
     def get(self,name:str,key:str='value') -> object:
         if name in self.variable:
@@ -23,5 +23,4 @@ class Environment:
 
     def set(self,name,value):
         if name in self.variable: self.variable[name]['value']=value
-        if self.parent: return self.parent.set(name,value)
-        return None
+        elif self.parent: return self.parent.set(name,value)

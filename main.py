@@ -64,5 +64,7 @@ if __name__=="__main__":
         print('Starting frontend...')
     tokens=run_Lexer()
     parsed=run_Parser(tokens)
-    resolved=run_Resolver(parsed)
+    if not parsed[1]: resolved=run_Resolver(parsed)
+    else: exit(1)
     if not resolved: run_Interpreter(parsed[0])
+    else: exit(1)

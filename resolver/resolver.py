@@ -5,7 +5,7 @@ import data.store as store
 import data.data as data
 import util.util as util
 
-class Resolver: # self.scope_stack[-1] :now scope
+class Resolver:
     def __init__(self,ast:data.Program) -> None:
         self.ast:data.Program=ast
         self.scope_stuck:list[dict[str,dict[str,object]]]=[{}]
@@ -32,11 +32,13 @@ class Resolver: # self.scope_stack[-1] :now scope
 
     def main(self):
         for node in self.ast.statements:
-            print(node)
+            if store.debug: print(node)
             if isinstance(node,data.Let):
                 if node.name not in self.scope_stuck[-1]: self.scope_stuck[-1][node.name]={'type':node.type_,'mutable':node.mutable}
                 else: self.error('TooManyLet',name=node.name)
             elif isinstance(node,data.Fn):
                 if node.name not in self.scope_stuck[-1]: self.scope_stuck[-1][node.name]={'type':'fn','mutable':False}
                 else: self.error('TooManyFn',name=node.name)
+        for node in self.ast.statements:
+            pass
         return self.errors

@@ -132,7 +132,7 @@ class Access:
 
 @dataclass
 class MethodCall:
-    obj: str
+    obj: x
     method: str
     args: list
 

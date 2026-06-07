@@ -8,49 +8,49 @@ FILENAME='test.myx'
 DIRPATH=os.path.dirname(os.path.abspath(__file__))
 FILEPATH=os.path.join(DIRPATH,FILENAME)
 
-SPACES=[' ', '\t']
-LINES=['\n']
-ARE=['"',"'"]
-END=[';']
-CALCULATIONS=[
+SPACES={' ', '\t'}
+LINES={'\n'}
+ARE={'"',"'"}
+END={';'}
+CALCULATIONS={
     '+','-','*','/','**',
     '(',')'
-]
-EXPRS=[
+}
+EXPRS={
     '+','-','&&','||'
-]
-TERMS=[
+}
+TERMS={
     '*','/'
-]
-POWER=[
+}
+POWER={
     '**'
-]
-IDC=[
+}
+IDC={
     '++','--'
-]
-PRIMARY=[
+}
+PRIMARY={
     '..'
-]
-COMPARISON=[
+}
+COMPARISON={
     '<','>','<=','>='
-]
-EQUALITY=[
+}
+EQUALITY={
     '==','===','!='
-]
-OVERFLOWMODE=[
+}
+OVERFLOWMODE={
     'panic','wrap','sat'
-]
-OPERATORS=[
+}
+OPERATORS={
     '+','-','*','/','**','=',
-    '(',')','{','}','"',"'",
+    '(',')','{','}','[',']','"',"'",
     '<','>','<=','>=','==','!=','===',
     '.',':',',','..',
     '&&','||',
     '^','~','<<','>>','&','|',
     '++','--',
-    '[',']'
-]
-RESERVED_WORD=[
+    '{','}'
+}
+RESERVED_WORD={
     'let','mut','panic','wrap','sat',
     'if','else','elif',
     'fn',
@@ -64,9 +64,9 @@ RESERVED_WORD=[
     'i4','i8','i6','i32','i64','i128','i256',
     'u4','u8','u6','u32','u64','u128','u256',
     'f8','f16','f32','f64','f128','f256',
-]
-COMMENT=[
+}
+COMMENT={
     '//','/*','*/'
-]
+}
 
-TYPE=['int','uint','float','str','bool','null']
+TYPE={'int','uint','float','str','bool','null'}

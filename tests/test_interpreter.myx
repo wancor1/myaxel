@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: CC0-1.0
 
-/*
-let x=[1, 2, 3];
-x.add(2);
-print(x[-1]);
-*/
 
-import math;
-
-let x=math.sqrt(3);
-
-println(math.sqrt(3));
-println(vars(math));
+let x=[];
+for(t=0,t<10,t++){
+    x.add(t);
+};
+print(x);
