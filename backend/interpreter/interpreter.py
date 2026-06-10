@@ -71,9 +71,7 @@ class Interpreter:
         elif node.value=='false': return False
         else: self.error(node,f'unknown literal value: {node.value}')
 
-    def eval_variable(self,node:data.Variable):
-        try: return self.env.get(node.name)
-        except exception.UndefinedVariableException as e: self.error(e,f'Undefined variable'); return None
+    def eval_variable(self,node:data.Variable): return self.env.get(node.name)
 
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)

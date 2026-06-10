@@ -60,7 +60,7 @@ RESERVED_WORD={
     'pass',
     'in','as',
     'true','false',
-    'int','uint','float','str','bool','null',
+    'any','int','uint','float','str','bool','null',
     'i4','i8','i6','i32','i64','i128','i256',
     'u4','u8','u6','u32','u64','u128','u256',
     'f8','f16','f32','f64','f128','f256',

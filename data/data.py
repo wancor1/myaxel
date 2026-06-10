@@ -84,7 +84,7 @@ class Use:
 
 @dataclass
 class Program:
-    statements:list
+    statements:list[x]
 
 @dataclass
 class Call:
@@ -148,3 +148,4 @@ class Index:
 # ==========
 
 x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index
+a=Call|Parm|Expr|Literal|Variable|Binary|Assign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use

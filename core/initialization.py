@@ -28,7 +28,7 @@ class Initialization:
             print('usage: main.py <path|filename> [-D|--debug]')
             sys.exit(2)
         const.FILEPATH,const.DIRPATH,const.FILENAME=filepath,dirpath,filename
-        if '--debug' in self.arg or '-D' in self.arg: store.debug=True
+        if '--debug' in self.arg or '-D' in self.arg: store.debug=True # lexer:1,parser:2,resolver:4,environment:8,interpreter:16
 
         if store.debug:
             print("arg >", self.arg)

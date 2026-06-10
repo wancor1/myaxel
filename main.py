@@ -36,8 +36,8 @@ def run_Parser(token):
 
 def run_Resolver(program):
     if store.debug: print(f'\n{'='*N}Resolver output{'='*N}')
-    resolver=_resolver.Resolver(program[0])
-    resolved=resolver.main()
+    resolver=_resolver.Resolver()
+    resolved=resolver.main(program[0].statements)
     if store.debug: 
         print(f'\nError:{resolved}')
         if resolved:

@@ -1,8 +1,20 @@
 // SPDX-License-Identifier: CC0-1.0
 
+let n:int=1;
+let x:int=n+n;
 
-let x=[];
-for(t=0,t<10,t++){
-    x.add(t);
+println(x);
+
+fn a(x){
+    let n:int=5;
+    println(n);
 };
-print(x);
+a(2);
+
+if(1==1){
+    x=x;
+}elif(1==1){
+    x=x;
+}else{
+    x=x;
+};
