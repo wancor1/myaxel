@@ -12,8 +12,9 @@ import math,os
 _NOTFOUND = object()
 
 class Interpreter:
-    def __init__(self):
+    def __init__(self,path):
         self.env=environment.Environment()
+        self.basepath:str=path
 
     def error(self,node,wte:str):
         raise exception.UnknownException(f'{wte};{node}')
@@ -161,7 +162,7 @@ class Interpreter:
             return _
 
     def eval_import(self,node:data.Import):
-        fpath=os.path.join(const.DIRPATH,node.path+const.EXT)
+        fpath=os.path.join(self.basepath,node.path+const.EXT)
         menv=environment.Environment(self.env)
         penv=self.env
         self.env=menv

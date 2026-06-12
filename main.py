@@ -8,6 +8,8 @@ import backend.interpreter.interpreter as _interpreter
 import data.const as const
 import data.store as store
 
+import os
+
 N=25
 
 def Initialization():
@@ -49,7 +51,7 @@ def run_Resolver(program):
 def run_Interpreter(program):
     store.fromlexer=False
     if store.debug: print(f'\n{'='*N}Interpreter output{'='*N}')
-    interpreter=_interpreter.Interpreter()
+    interpreter=_interpreter.Interpreter(const.DIRPATH)
     mon=interpreter.main(program)
     if store.debug: print(f'\n{'='*N}{'='*len('Interpreter output')}{'='*N}')
     return mon
