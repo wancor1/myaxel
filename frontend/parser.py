@@ -54,6 +54,10 @@ class Parser:
             self.errors.append(data.ErrorFormat(type,f'Unknown primary error:\n  {self.current_token}',line,col,needed))
         elif type=='not_crement':
             self.errors.append(data.ErrorFormat(type,f'It is not in/decrement:\n  {self.current_token}',line,col,needed))
+        elif type=='is_not_op':
+            self.errors.append(data.ErrorFormat(type,f'It is not operation:\n  {self.current_token}',line,col,needed))
+        elif type=='is_not_compound':
+            self.errors.append(data.ErrorFormat(type,f'It is not compound:\n  {self.current_token}',line,col,needed))
         elif type=='forgot_end':
             self.errors.append(data.ErrorFormat(type,f'Maybe you forgot the end:\n  {self.current_token}',line,col,needed))
         elif type=='howd_it_get_here':
@@ -104,6 +108,7 @@ class Parser:
             if  (_:=self.get().value) in const.IDC:     return self.parse_crement()
             elif _=='(':                                return self.parse_funccall()
             elif _=='.':                                return self.parse_access()
+            elif _ in const.COMPOUND:                   return self.parse_compoundassign()
             else:                                       return self.parse_assign()
         elif self.current_token.type=='KEYWORD':
             if self.current_token.value=='let':         return self.parse_let()
@@ -248,6 +253,21 @@ class Parser:
             self.error('expression_isnone')
             return data.Assign('',data.Expr([]))
 
+    def parse_compoundassign(self) -> data.CompoundAssign:
+        idn=self.expect('IDENT')
+        if self.current_token.type=='OP':
+            if self.current_token.value in const.COMPOUND:
+                _op=self.current_token.value
+                self.next()
+            else: self.error('is_not_compound'); return data.CompoundAssign('',data.Expr([]),'')
+        else: self.error('is_not_op'); return data.CompoundAssign('',data.Expr([]),'')
+        exp=self.parse_expression()
+        self.expect('END')
+        if idn: return data.CompoundAssign(str(idn.value),exp,_op)
+        else:
+            self.error('expression_isnone')
+            return data.CompoundAssign('',data.Expr([]),'')
+
     def parse_assignexpr(self) -> data.Assign:
         idn=self.expect('IDENT')
         if self.current_token.type=='OP':
@@ -255,8 +275,7 @@ class Parser:
                 _op=self.current_token.value
                 self.next()
         exp=self.parse_expression()
-        if idn:
-            return data.Assign(str(idn.value),exp)
+        if idn: return data.Assign(str(idn.value),exp)
         else:
             self.error('expression_isnone')
             return data.Assign('',data.Expr([]))

@@ -121,6 +121,12 @@ class Assign:
     value:Expr
 
 @dataclass
+class CompoundAssign:
+    name:str
+    value:Expr
+    op:str
+
+@dataclass
 class Unary:
     op:str
     operand:x
@@ -148,4 +154,4 @@ class Index:
 # ==========
 
 x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index
-a=Call|Parm|Expr|Literal|Variable|Binary|Assign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use
+a=Call|Parm|Expr|Literal|Variable|Binary|Assign|CompoundAssign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use

@@ -19,27 +19,28 @@ class Interpreter:
         raise exception.UnknownException(f'{wte};{node}')
 
     def eval(self,node):
-        if isinstance(node,data.Literal):       return self.eval_literal(node)
-        elif isinstance(node,data.Variable):    return self.eval_variable(node)
-        elif isinstance(node,data.Expr):        return self.eval(node.value[0])
-        elif isinstance(node,data.Array):       return [self.eval(i) for i in node.elements]
-        elif isinstance(node,data.Index):       return self.eval(node.array)[self.eval(node.index)]
-        elif isinstance(node,data.Binary):      return self.eval_binary(node)
-        elif isinstance(node,data.Let):         self.env.define(node.name,self.eval(node.value) if node.value else None,node.type_,node.mutable,node.overflow)
-        elif isinstance(node,data.Assign):      self.env.set(node.name,self.eval(node.value))
-        elif isinstance(node,data.Unary):       return self.eval_unary(node)
-        elif isinstance(node,data.If):          return self.eval_if(node)
-        elif isinstance(node,data.While):       return self.eval_while(node)
-        elif isinstance(node,data.Break):       raise exception.BreakException(node)
-        elif isinstance(node,data.Continue):    raise exception.ContinueException(node)
-        elif isinstance(node,data.Return):      raise exception.ReturnException(self.eval(node.value) if node.value else None)
-        elif isinstance(node,data.Fn):          self.env.define(node.name,node,'fn',False,'')
-        elif isinstance(node,data.Call):        return self.eval_call(node)
-        elif isinstance(node,data.Import):      return self.eval_import(node)
-        elif isinstance(node,data.MethodCall):  return self.eval_methodcall(node)
-        elif isinstance(node,data.Use):         return self.eval_use(node)
-        elif isinstance(node,data.Access):      return self.eval_access(node)
-        else:                                   raise exception.UnknownException('unknown keyword')
+        if isinstance(node,data.Literal):           return self.eval_literal(node)
+        elif isinstance(node,data.Variable):        return self.env.get(node.name)
+        elif isinstance(node,data.Expr):            return self.eval(node.value[0])
+        elif isinstance(node,data.Array):           return [self.eval(i) for i in node.elements]
+        elif isinstance(node,data.Index):           return self.eval_index(node)
+        elif isinstance(node,data.Binary):          return self.eval_binary(node)
+        elif isinstance(node,data.Let):             self.env.define(node.name,self.eval(node.value) if node.value else None,node.type_,node.mutable,node.overflow)
+        elif isinstance(node,data.Assign):          self.env.set(node.name,self.eval(node.value))
+        elif isinstance(node,data.CompoundAssign):  self.eval_compoundassign(node)
+        elif isinstance(node,data.Unary):           return self.eval_unary(node)
+        elif isinstance(node,data.If):              return self.eval_if(node)
+        elif isinstance(node,data.While):           return self.eval_while(node)
+        elif isinstance(node,data.Break):           raise exception.BreakException(node)
+        elif isinstance(node,data.Continue):        raise exception.ContinueException(node)
+        elif isinstance(node,data.Return):          raise exception.ReturnException(self.eval(node.value) if node.value else None)
+        elif isinstance(node,data.Fn):              self.env.define(node.name,node,'fn',False,'')
+        elif isinstance(node,data.Call):            return self.eval_call(node)
+        elif isinstance(node,data.Import):          return self.eval_import(node)
+        elif isinstance(node,data.MethodCall):      return self.eval_methodcall(node)
+        elif isinstance(node,data.Use):             return self.eval_use(node)
+        elif isinstance(node,data.Access):          return self.eval_access(node)
+        else:                                       raise exception.UnknownException('unknown keyword')
 
     # === ===
 
@@ -71,7 +72,13 @@ class Interpreter:
         elif node.value=='false': return False
         else: self.error(node,f'unknown literal value: {node.value}')
 
-    def eval_variable(self,node:data.Variable): return self.env.get(node.name)
+    def eval_index(self,node:data.Index):
+        ar=self.eval(node.array)
+        i=self.eval(node.index)
+        if not isinstance(ar,list): return self.error(node,f'IndexArrayTypeError')
+        if not isinstance(i,int): return self.error(node,f'IndexTypeError')
+        if len(ar)<=i or -len(ar)>i: return self.error(node,f'IndexRangeError')
+        return ar[i]
 
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)
@@ -105,6 +112,16 @@ class Interpreter:
         elif node.op=='<<': return int(l)<<int(r)
         elif node.op=='>>': return int(l)>>int(r)
         else: raise exception.UndefinedBinaryException(node.op)
+
+    def eval_compoundassign(self,node:data.CompoundAssign):
+        l=self.env.get(node.name)
+        r=self.eval(node.value)
+        if not isinstance(l,(int,float)): return
+        if not isinstance(r,(int,float)): return
+        if node.op=='+=': self.env.set(node.name,l+r)
+        elif node.op=='-=': self.env.set(node.name,l-r)
+        elif node.op=='*=': self.env.set(node.name,l*r)
+        elif node.op=='/=': self.env.set(node.name,self.error(node,'div0error') if r==0 else l/r)
 
     def eval_unary(self,node:data.Unary):
         if node.op=='-': return -self.eval(node.operand)

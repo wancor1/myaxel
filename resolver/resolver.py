@@ -54,10 +54,10 @@ class Resolver:
         elif isinstance(node,data.Break): self.resolve_breakcontinue()
         elif isinstance(node,data.Continue): self.resolve_breakcontinue()
         elif isinstance(node,list): self.twopass(node)
-        elif isinstance(node,data.Literal): return
-        elif isinstance(node,data.Use): return
-        elif isinstance(node,data.Import): return
-        else: self.error('UnknownNode',node=node)
+        # elif isinstance(node,data.Literal): return
+        # elif isinstance(node,data.Use): return
+        # elif isinstance(node,data.Import): return
+        else: return # self.error('UnknownNode',node=node)
 
     def resolve_let(self,node:data.Let):
         if self.in_function:
