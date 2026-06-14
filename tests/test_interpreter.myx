@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
 
+
 let n:int=1;
 let x:int=n+n;
 
@@ -18,5 +19,8 @@ if(1==1){
 }else{
     x=x;
 };
+
 let h=1;
 h+=1;
+
+println(f'text');

@@ -1,11 +1,10 @@
 # SPDX-License-Identifier: MPL-2.0
 
-class BreakException(Exception): pass
 
-class ContinueException(Exception): pass
-
-class ReturnException(Exception):
+class UnknownException(Exception):
     def __init__(self,value): self.value=value
+
+# environment
 
 class UndefinedVariableException(Exception):
     def __init__(self,name): self.name=name
@@ -13,8 +12,17 @@ class UndefinedVariableException(Exception):
 class UnknownVariableKeyException(Exception):
     def __init__(self,key): self.key=key
 
-class UndefinedBinaryException(Exception):
-    def __init__(self,name): self.name=name
+# interpreter
 
-class UnknownException(Exception):
-    def __init__(self,value): self.value=value
+class BreakException(Exception): pass
+
+class ContinueException(Exception): pass
+
+class ReturnException(Exception):
+    def __init__(self,value) -> None: self.value=value
+
+class NotFindBraces(Exception):
+    def __init__(self,value) -> None: self.value=value
+
+class UndefinedBinaryException(Exception):
+    def __init__(self,name) -> None: self.name=name

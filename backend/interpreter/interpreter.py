@@ -16,8 +16,9 @@ class Interpreter:
         self.env=environment.Environment()
         self.basepath:str=path
 
-    def error(self,node,wte:str):
-        raise exception.UnknownException(f'{wte};{node}')
+    def error(self,node,typ:str):
+        if typ=='NotFindBraces': raise exception.NotFindBraces(f'Expected braces, but none were found.\n {node}')
+        raise exception.UnknownException(f'{typ};{node}')
 
     def eval(self,node):
         if isinstance(node,data.Literal):           return self.eval_literal(node)
@@ -53,7 +54,8 @@ class Interpreter:
                 result+=str(args[idx]) if args and idx < len(args) else '{}'
                 idx+=1;evl+=2
             elif s[evl]=='{':
-                j=s.index('}',evl)
+                j=s.find('}',evl)
+                if j==-1: return self.error(s,'NotFindBraces')
                 result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j]).main()).parse_expr_only()))
                 evl=j+1
             else:
@@ -76,9 +78,9 @@ class Interpreter:
     def eval_index(self,node:data.Index):
         ar=self.eval(node.array)
         i=self.eval(node.index)
-        if not isinstance(ar,list): return self.error(node,f'IndexArrayTypeError')
-        if not isinstance(i,int): return self.error(node,f'IndexTypeError')
-        if len(ar)<=i or -len(ar)>i: return self.error(node,f'IndexRangeError')
+        if not isinstance(ar,list): return self.error(node,'IndexArrayTypeError')
+        if not isinstance(i,int): return self.error(node,'IndexTypeError')
+        if len(ar)<=i or -len(ar)>i: return self.error(node,'IndexRangeError')
         return ar[i]
 
     def eval_binary(self,node:data.Binary):

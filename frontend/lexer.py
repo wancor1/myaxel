@@ -5,8 +5,6 @@ import data.data as data
 import data.store as store
 from util.print import get_async_print
 
-DIRPATH,FILENAME=const.DIRPATH,const.FILENAME
-OPERATORS,RESERVED_WORD,ARE,SPACES,LINES,END,COMMENT=const.OPERATORS,const.RESERVED_WORD,const.ARE,const.SPACES,const.LINES,const.END,const.COMMENT
 
 class Lexer:
     def __init__(self,path:str='',source:str=''):
@@ -36,14 +34,14 @@ class Lexer:
         if not value: return
         vlen = column if column is not None else self.column - len(value)
         vline = line if line is not None else self.line
-        if value in RESERVED_WORD:                              self.output.append(data.Token('KEYWORD',value,vline,vlen))
-        elif value in LINES:                                    self.output.append(data.Token('LINE'   ,value,vline,vlen))
-        elif value[:2] in COMMENT:                              self.output.append(data.Token('COMMENT',value,vline,vlen))
-        elif value in OPERATORS:                                self.output.append(data.Token('OP'     ,value,vline,vlen))
-        elif value in END:                                      self.output.append(data.Token('END'    ,value,vline,vlen))
+        if value in const.RESERVED_WORD:                        self.output.append(data.Token('KEYWORD',value,vline,vlen))
+        elif value in const.LINES:                              self.output.append(data.Token('LINE'   ,value,vline,vlen))
+        elif value[:2] in const.COMMENT:                        self.output.append(data.Token('COMMENT',value,vline,vlen))
+        elif value in const.OPERATORS:                          self.output.append(data.Token('OP'     ,value,vline,vlen))
+        elif value in const.END:                                self.output.append(data.Token('END'    ,value,vline,vlen))
         elif value.replace('.', '', 1).isdigit():               self.output.append(data.Token('NUMBER' ,value,vline,vlen))
         elif value.startswith('"') or value.startswith("'"):    self.output.append(data.Token('STRING' ,value,vline,vlen))
-        elif value.startswith('f"') or value.startswith("f'"):  value[:1];self.output.append(data.Token('FSTRING',value,vline,vlen))
+        elif value.startswith('f"') or value.startswith("f'"):  value=value[1:];self.output.append(data.Token('FSTRING',value,vline,vlen))
         else:                                                   self.output.append(data.Token('IDENT'  ,value,vline,vlen))
 
     def main(self):
@@ -51,14 +49,14 @@ class Lexer:
             self.stack.append(self.current_char)
             if store.debug:
                 self.aprint(self.stack)
-            if self.stack[0] in SPACES:                             # space
+            if self.stack[0] in const.SPACES:                       # space
                 self.stack.clear()
-            elif self.stack[0] in LINES:                            # line
+            elif self.stack[0] in const.LINES:                      # line
                 self.add_token("".join(self.stack))
                 self.line+=1
                 self.column=1
                 self.stack.clear()
-            elif self.stack[0] in END:                              # end
+            elif self.stack[0] in const.END:                        # end
                 self.add_token("".join(self.stack))
                 self.stack.clear()
             elif self.current_char == '/' and self.get(1) == '/':   # oneline comment
@@ -77,7 +75,7 @@ class Lexer:
                 self.next()
                 while self.current < self.filelen:
                     self.stack.append(self.current_char)
-                    if self.stack[-1] in LINES:
+                    if self.stack[-1] in const.LINES:
                         self.line+=1
                         self.column=1
                     if self.current_char == '*' and self.get(1) == '/':
@@ -87,18 +85,22 @@ class Lexer:
                     self.next()
                 self.add_token(''.join(self.stack),comment_column,comment_line)
                 self.stack.clear()
-            elif self.current_char in ARE:                          # str
-                string=quote=self.current_char
+            elif self.current_char in const.ARE:                    # str
+                string=self.current_char
+                quote=self.current_char
                 escape=False
                 while True:
                     self.next()
-                    if self.current >= self.filelen: break
-                    char = self.current_char
-                    string += char
-                    if escape: escape = False; continue
-                    if char == '\\': escape = True; continue
-                    if char == quote: break
-                self.add_token(string)
+                    if self.current>=self.filelen: break
+                    char=self.current_char
+                    string+=char
+                    self.stack.append(char)
+                    if escape: escape=False; continue
+                    if char=='\\': escape=True; continue
+                    if char==quote: break
+                    self.aprint(f'>{string}')
+                self.aprint(f'>{string}')
+                self.add_token(''.join(self.stack))
                 self.stack.clear()
             elif self.stack[0].isdigit():                           # number
                 if self.get(1).isdigit() or (self.get(1) == '.' and self.get(2) != '.' and '.' not in self.stack):
@@ -107,18 +109,21 @@ class Lexer:
                     self.add_token("".join(self.stack))
                     self.stack.clear()
             elif self.stack[0].isalpha() or self.stack[0] == '_':   # var,reserved word
+                if self.get(1) in const.ARE: 
+                    self.next()
+                    continue
                 if self.get(1).isalnum() or self.get(1) == '_':
                     pass
                 else:
                     self.add_token("".join(self.stack))
                     self.stack.clear()
-            elif self.stack[0] in OPERATORS:                        # operator
-                if f'{self.stack[0]}{self.get(1)}{self.get(2)}' in OPERATORS:
+            elif self.stack[0] in const.OPERATORS:                  # operator
+                if f'{self.stack[0]}{self.get(1)}{self.get(2)}' in const.OPERATORS:
                     self.add_token(f'{self.stack[0]}{self.get(1)}{self.get(2)}')
                     self.stack.clear()
                     self.next()
                     self.next()
-                elif f'{self.stack[0]}{self.get(1)}' in OPERATORS:
+                elif f'{self.stack[0]}{self.get(1)}' in const.OPERATORS:
                     self.add_token(f'{self.stack[0]}{self.get(1)}')
                     self.stack.clear()
                     self.next()
