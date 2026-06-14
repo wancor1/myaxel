@@ -517,8 +517,12 @@ class Parser:
                 self.wskipline()
             self.expect('OP',')')
             if self.current_token_tv==('OP','.'):
-                raise type("WipThis",(Exception,),{})()
-                while self.current_token_tv!=('OP','.'):
+                r=data.MethodCall(data.Variable(id),m,args)
+                while self.current_token_tv==('OP','.'):
+                    args=[]
+                    self.expect('OP','.')
+                    m=self.expect('IDENT').value
+                    self.expect('OP','(')
                     while self.current_token_tv!=('OP',')'):
                         self.wskipline()
                         if self.get().value=='=':
@@ -530,9 +534,9 @@ class Parser:
                         if self.current_token_tv==('OP',','): self.next()
                         self.wskipline()
                     self.expect('OP',')')
-                # 複数時のreturn考えてね
-                # returnにlistもいれるとparse_expression系がうるさくなるよ
-                return 
+                    r=data.MethodCall(r,m,args)
+                self.expect('END')
+                return r
             self.expect('END')
             return data.MethodCall(data.Variable(id),m,args)
         return data.Access(id,m)
