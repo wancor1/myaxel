@@ -196,6 +196,8 @@ class Interpreter:
                 elif len(node.args)>1: return self.error(node,"method rmvalue() requires exactly 1 argument")
                 t=self.eval(node.args[0])
                 lt[:]=[v for v in lt if v!=t]
+                if isinstance(node.obj,data.Variable): self.env.set(node.obj.name,lt)
+            return lt
 
     def eval_use(self,node:data.Use):
         if isinstance(n:=self.env.get(node.module),environment.Environment): self.env.define(node.name,n.get(node.name),'',False,'')
@@ -216,15 +218,11 @@ class Interpreter:
         elif node.name=='type':
             if not node.args: return self.error(node,"type() requires exactly 1 argument")
             elif len(node.args)>1: return self.error(node,"type() requires exactly 1 argument")
-            return str(self.env.variable[node.args[0].value[0].name]['type'])
-        elif node.name=='dir':
-            if not node.args: return self.error(node,"dir() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"dir() requires exactly 1 argument")
-            return str(self.env.variable[node.args[0].value[0].name])
+            return str(self.env.get(node.args[0].value[0].name,'type'))
         elif node.name=='vars':
             if not node.args: return self.error(node,"vars() requires exactly 1 argument")
             elif len(node.args)>1: return self.error(node,"vars() requires exactly 1 argument")
-            return str(self.env.variable[node.args[0].value[0].name]['value'].__getstate__())
+            return str(self.env.get(node.args[0].value[0].name,''))
         # === math ===
         elif node.name=='abs':
             if not node.args: return self.error(node,"abs() requires exactly 1 argument")

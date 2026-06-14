@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import data.exception as exception
+import data.data as data
 class Environment:
     def __init__(self,parent:Environment|None=None) -> None:
         self.parent=parent
@@ -21,6 +22,6 @@ class Environment:
         if self.parent: return self.parent.get(name,key)
         raise exception.UndefinedVariableException(name)
 
-    def set(self,name,value):
+    def set(self,name:str,value):
         if name in self.variable: self.variable[name]['value']=value
         elif self.parent: return self.parent.set(name,value)
