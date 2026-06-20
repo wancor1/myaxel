@@ -7,4 +7,4 @@ test.py
 
 *.ign
 
-_.myx
+*!.myx

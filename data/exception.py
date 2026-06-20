@@ -26,3 +26,6 @@ class NotFindBraces(Exception):
 
 class UndefinedBinaryException(Exception):
     def __init__(self,name) -> None: self.name=name
+
+class Div0(Exception):
+    def __init__(self,value) -> None: self.value=value

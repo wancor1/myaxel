@@ -16,19 +16,18 @@ class Parser:
         self.blocker:int=0
         self.for_counter:int=0
 
-    def next(self,c:int=1) -> bool:
+    def next(self,c:int=1) -> None:
         for i in range(c):
             if store.debug and store.fromlexer: print(self.current_token)
             self.current+=1
             if self.current < len(self.tokens):
-                self.blocker=0
                 self.current_token=self.tokens[self.current]
                 self.current_token_tv=self.current_token.type,self.current_token.value
+                self.blocker=0
             else:
                 self.blocker+=1
-                self.current_token=data.Token('ERROR',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,self.blocker)
-                if self.blocker>=50: return True
-        return False
+                self.current_token=data.Token('ERROR',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,-1)
+                if self.blocker>=20: raise type("LoopError", (Exception,), {})("Unknown Error:heart:")
 
     def get(self,num:int=1,cfs:bool=False) -> data.Token:
         i=num if cfs else self.current+num
@@ -76,11 +75,11 @@ class Parser:
             if self.current_token.type=='END':
                 self.next()
                 break
-            if self.next(): break
+            self.next()
 
     def wskipline(self) -> None:
         while self.current_token.type=='LINE':
-            if self.next(): break
+            self.next()
 
     def expect(self,type_:str,value:str|None=None) -> data.Token:
         if type_==self.current_token.type:
@@ -101,14 +100,16 @@ class Parser:
     # ===== parse =====
 
     def parse_statement(self) -> object:
-        if self.blocker>=50: return 
         if self.current_token.type=='COMMENT':  self.next()
         elif self.current_token.type=='ERROR':  self.next()
         elif self.current_token.type=='LINE':   self.next()
         elif self.current_token.type=='IDENT':
             if  (_:=self.get().value) in const.IDC:     return self.parse_crement()
             elif _=='(':                                return self.parse_funccall()
-            elif _=='.':                                return self.parse_access()
+            elif _=='.':
+                a=self.parse_postfix()
+                self.expect('END')
+                return a
             elif _ in const.COMPOUND:                   return self.parse_compoundassign()
             else:                                       return self.parse_assign()
         elif self.current_token.type=='KEYWORD':
@@ -187,7 +188,7 @@ class Parser:
             return data.Binary(l,o,r)
         return l
 
-    def parse_primary(self) -> data.Literal | data.Variable | data.Array | data.Call | data.Unary | data.Access | data.MethodCall | data.Index:
+    def parse_primary(self) -> data.x:
         if self.current_token_tv==('OP','-'):  self.next(); return data.Unary('-', self.parse_primary())
         elif self.current_token.type=='NUMBER':             return data.Literal(self.expect('NUMBER').value)
         elif self.current_token.type=='IDENT':              return self.parse_primary_ident()
@@ -195,9 +196,32 @@ class Parser:
         elif self.current_token.type=='FSTRING':            return data.Literal(self.expect('FSTRING').value,True)
         elif self.current_token.value in ('true','false'):  return data.Literal(self.expect('KEYWORD').value)
         elif self.current_token_tv==('OP','['):             return self.parse_primary_list()
+        elif self.current_token_tv==('OP','('):             return self.parse_paren()
         else: self.error('unknown_primary','NUMBER | IDENT | STRING')
-        if self.next(): return data.Literal('')
+        self.next()
         return data.Literal('')
+
+    def parse_paren(self):
+        self.expect('OP','(')
+        self.wskipline()
+        first=self.parse_expression()
+        if self.current_token_tv==('OP',','):
+            return self.parse_primary_tuple(first)
+        else:
+            return self.parse_grouping(first)
+
+    def parse_primary_tuple(self,first):
+        ls:list=[]
+        self.expect('OP',',')
+        while self.current_token_tv!=('OP',')'):
+            ls.append(self.parse_expression())
+            if self.current_token_tv==('OP',','): self.next()
+        self.expect('OP',')')
+        return data.Tuple([first]+ls)
+
+    def parse_grouping(self,first):
+        self.expect('OP',')')
+        return first.value[0]
 
     def parse_primary_ident(self) -> data.Call | data.Access | data.MethodCall | data.Variable:
         if self.get().value=='(':
@@ -218,8 +242,6 @@ class Parser:
             self.wskipline()
             self.expect('OP',')')
             return data.Call(_.value,args)
-        elif self.get().value=='.':
-            return self.parse_access()
         else:
             _=self.expect('IDENT')
             if _: return data.Variable(_.value)
@@ -236,11 +258,36 @@ class Parser:
 
     def parse_postfix(self):
         e=self.parse_primary()
-        while self.current_token_tv==('OP','['):
-            self.expect('OP','[')
-            i=self.parse_expression()
-            self.expect('OP',']')
-            e=data.Index(e,i)
+        while self.current_token_tv in(('OP','['),('OP','.')):
+            if self.current_token_tv==('OP','['):
+                self.expect('OP','[')
+                i=self.parse_expression()
+                self.expect('OP',']')
+                e=data.Index(e,i)
+            else:
+                self.expect('OP','.')
+                if self.current_token.type=='NUMBER':
+                    n=self.expect('NUMBER').value
+                    e=data.TupleAccess(e,int(n))
+                elif self.current_token.type=='IDENT':
+                    m=self.expect('IDENT')
+                    if self.current_token_tv==('OP','('):
+                        self.expect('OP','(')
+                        a:list[data.Expr|tuple]=[]
+                        while self.current_token_tv!=('OP',')'):
+                            self.wskipline()
+                            if self.get().value=='=':
+                                n=self.current_token.value
+                                self.next(2)
+                                a.append((n,self.parse_expression()))
+                            else: a.append(self.parse_expression())
+                            self.wskipline()
+                            if self.current_token_tv==('OP',','): self.next()
+                            self.wskipline()
+                        self.expect('OP',')')
+                        e=data.MethodCall(e,m.value,a)
+                    else:
+                        e=data.Access(e,m.value)
         return e
 
     def parse_assign(self) -> data.Assign:
@@ -509,51 +556,6 @@ class Parser:
         path=self.expect('IDENT').value
         self.expect('END')
         return data.Import(path)
-
-    def parse_access(self) -> data.Access|data.MethodCall:
-        id=self.expect('IDENT').value
-        self.wskipline()
-        self.expect('OP','.')
-        m=self.expect('IDENT').value
-        if self.current_token_tv==('OP','('):
-            self.expect('OP','(')
-            self.wskipline()
-            args:list[data.Expr|tuple]=[]
-            while self.current_token_tv!=('OP',')'):
-                self.wskipline()
-                if self.get().value=='=':
-                    name=self.current_token.value
-                    self.next(2)
-                    args.append((name,self.parse_expression()))
-                else: args.append(self.parse_expression())
-                self.wskipline()
-                if self.current_token_tv==('OP',','): self.next()
-                self.wskipline()
-            self.expect('OP',')')
-            if self.current_token_tv==('OP','.'):
-                r=data.MethodCall(data.Variable(id),m,args)
-                while self.current_token_tv==('OP','.'):
-                    args=[]
-                    self.expect('OP','.')
-                    m=self.expect('IDENT').value
-                    self.expect('OP','(')
-                    while self.current_token_tv!=('OP',')'):
-                        self.wskipline()
-                        if self.get().value=='=':
-                            name=self.current_token.value
-                            self.next(2)
-                            args.append((name,self.parse_expression()))
-                        else: args.append(self.parse_expression())
-                        self.wskipline()
-                        if self.current_token_tv==('OP',','): self.next()
-                        self.wskipline()
-                    self.expect('OP',')')
-                    r=data.MethodCall(r,m,args)
-                self.expect('END')
-                return r
-            self.expect('END')
-            return data.MethodCall(data.Variable(id),m,args)
-        return data.Access(id,m)
 
     def parse_use(self):
         self.expect('KEYWORD','use')

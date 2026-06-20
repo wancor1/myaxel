@@ -50,15 +50,16 @@ class Resolver:
         elif isinstance(node,data.Unary): self.resolve_unary(node)
         elif isinstance(node,data.Call): self.resolve_call(node)
         elif isinstance(node,data.Index): self.resolve_index(node)
+        elif isinstance(node,data.Access): self.resolve(node.obj)
+        elif isinstance(node,data.TupleAccess): self.resolve(node.obj)
         elif isinstance(node,data.MethodCall): self.resolve_methodcall(node)
+        elif isinstance(node,data.Array): self.resolve_array(node)
+        elif isinstance(node,data.Tuple): self.resolve_tuple(node)
         elif isinstance(node,data.Return): self.resolve_return(node)
         elif isinstance(node,data.Break): self.resolve_breakcontinue()
         elif isinstance(node,data.Continue): self.resolve_breakcontinue()
         elif isinstance(node,list): self.twopass(node)
-        # elif isinstance(node,data.Literal): return
-        # elif isinstance(node,data.Use): return
-        # elif isinstance(node,data.Import): return
-        else: return # self.error('UnknownNode',node=node)
+        else: return
 
     def resolve_let(self,node:data.Let):
         if len(self.scope_stuck)>1:
@@ -138,6 +139,12 @@ class Resolver:
     def resolve_methodcall(self,node:data.MethodCall):
         self.resolve(node.obj)
         self.twopass(node.args)
+
+    def resolve_array(self,node:data.Array):
+        for i in node.elements: self.resolve(i)
+
+    def resolve_tuple(self,node:data.Tuple):
+        for i in node.elements: self.resolve(i)
 
     def resolve_return(self,node:data.Return):
         if not self.in_function: self.error('NotFn')

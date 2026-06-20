@@ -17,7 +17,8 @@ class Interpreter:
         self.basepath:str=path
 
     def error(self,node,typ:str):
-        if typ=='NotFindBraces': raise exception.NotFindBraces(f'Expected braces, but none were found.\n {node}')
+        if typ=='NotFindBraces':    raise exception.NotFindBraces(f'Expected braces, but none were found.\n {node}')
+        elif typ=='div0error':     raise exception.Div0(f'Can\'t divide by zero')
         raise exception.UnknownException(f'{typ};{node}')
 
     def eval(self,node):
@@ -25,6 +26,7 @@ class Interpreter:
         elif isinstance(node,data.Variable):        return self.env.get(node.name)
         elif isinstance(node,data.Expr):            return self.eval(node.value[0])
         elif isinstance(node,data.Array):           return [self.eval(i) for i in node.elements]
+        elif isinstance(node,data.Tuple):           return tuple(self.eval(i) for i in node.elements)
         elif isinstance(node,data.Index):           return self.eval_index(node)
         elif isinstance(node,data.Binary):          return self.eval_binary(node)
         elif isinstance(node,data.Let):             self.env.define(node.name,self.eval(node.value) if node.value else None,node.type_,node.mutable,node.overflow)
@@ -42,6 +44,7 @@ class Interpreter:
         elif isinstance(node,data.MethodCall):      return self.eval_methodcall(node)
         elif isinstance(node,data.Use):             return self.eval_use(node)
         elif isinstance(node,data.Access):          return self.eval_access(node)
+        elif isinstance(node,data.TupleAccess):     return self.eval_tupleaccess(node)
         else:                                       raise exception.UnknownException('unknown keyword')
 
     # === ===
@@ -82,6 +85,13 @@ class Interpreter:
         if not isinstance(i,int): return self.error(node,'IndexTypeError')
         if len(ar)<=i or -len(ar)>i: return self.error(node,'IndexRangeError')
         return ar[i]
+
+    def eval_tupleaccess(self,node:data.TupleAccess):
+        t=self.eval(node.obj)
+        i=node.index
+        if not isinstance(t,tuple): return self.error(node,'IndexTupleTypeError')
+        if len(t)<=i or -len(t)>i: return self.error(node,'TupleIndexRangeError')
+        return t[i]
 
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)
@@ -217,7 +227,7 @@ class Interpreter:
         if isinstance(n:=self.env.get(node.module),environment.Environment): self.env.define(node.name,n.get(node.name),'',False,'')
 
     def eval_access(self,node:data.Access):
-        if isinstance(n:=self.env.get(node.obj),environment.Environment): return n.get(node.member)
+        if isinstance(n:=self.eval(node.obj),environment.Environment): return n.get(node.member)
 
     def eval_int(self,node) -> int:
         if not isinstance(v:=self.eval(node),int): raise TypeError()

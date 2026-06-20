@@ -133,18 +133,27 @@ class Unary:
 
 @dataclass
 class Access:
-    obj:str
+    obj:x
     member:str
 
 @dataclass
 class MethodCall:
-    obj: x
-    method: str
-    args: list
+    obj:x
+    method:str
+    args:list
 
 @dataclass
 class Array:
     elements:list
+
+@dataclass
+class Tuple:
+    elements:list
+
+@dataclass
+class TupleAccess:
+    obj:x
+    index:int
 
 @dataclass
 class Index:
@@ -153,5 +162,5 @@ class Index:
 
 # ==========
 
-x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index
-a=Call|Parm|Expr|Literal|Variable|Binary|Assign|CompoundAssign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use
+x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index|Tuple|TupleAccess
+a=Call|Parm|Expr|Literal|Variable|Binary|Assign|CompoundAssign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use|Tuple|TupleAccess
