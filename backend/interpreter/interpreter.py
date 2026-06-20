@@ -132,11 +132,22 @@ class Interpreter:
 
     def eval_if(self,node:data.If):
         if self.eval(node.condition):
+            wenv=environment.Environment(self.env)
+            penv=self.env
+            self.env=wenv
             for stmt in node.body:  self.eval(stmt)
+            self.env=penv
         elif node.else_:
+            wenv=environment.Environment(self.env)
+            penv=self.env
+            self.env=wenv
             for stmt in node.else_: self.eval(stmt)
+            self.env=penv
 
     def eval_while(self,node:data.While):
+        wenv=environment.Environment(self.env)
+        penv=self.env
+        self.env=wenv
         while self.eval(node.condition):
             try:
                 for stmt in node.body:
@@ -145,6 +156,7 @@ class Interpreter:
                     else: self.eval(stmt)
             except exception.ContinueException: continue
             except exception.BreakException:    break
+        self.env=penv
 
     def eval_call(self,node:data.Call):
         a=self.func_main(node)
@@ -250,6 +262,12 @@ class Interpreter:
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"round() requires a numeric argument")
             return math.floor(val+0.5)
+        # === ===
+        elif node.name=='len':
+            if len(node.args)!=1: return self.error(node,"len() requires exactly 1 argument")
+            val=self.eval(node.args[0])
+            if not isinstance(val,list): return self.error(node,"len() requires an array argument")
+            return len(val)
         return _NOTFOUND
 
     def func_print(self,node:data.Call) -> str:

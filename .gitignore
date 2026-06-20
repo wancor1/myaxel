@@ -6,3 +6,5 @@ ignore
 test.py
 
 *.ign
+
+_.myx

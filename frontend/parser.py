@@ -14,6 +14,7 @@ class Parser:
         self.errors:list=[]
         self.statements:list=[]
         self.blocker:int=0
+        self.for_counter:int=0
 
     def next(self,c:int=1) -> bool:
         for i in range(c):
@@ -458,16 +459,29 @@ class Parser:
             _ident=self.expect('IDENT').value
             self.expect('KEYWORD','in')
             _start=self.parse_expression()
-            self.expect('OP','..')
-            _end=self.parse_expression().value[0]
-            self.wskipline()
-            _cond=data.Expr([data.Binary(data.Variable(str(_ident)),'<',_end)])
-            _upda=util.increment(str(_ident))
-            self.expect('OP','{')
-            _body=self.parse_block()
-            self.expect('OP','}')
-            self.expect('END')
-            return [util.let(str(_ident),_start,True),data.While(_cond,_body+[_upda])]
+            if self.current_token_tv==('OP','..'):
+                self.expect('OP','..')
+                _end=self.parse_expression().value[0]
+                self.wskipline()
+                _cond=data.Expr([data.Binary(data.Variable(str(_ident)),'<',_end)])
+                _upda=util.increment(str(_ident))
+                self.expect('OP','{')
+                _body=self.parse_block()
+                self.expect('OP','}')
+                self.expect('END')
+                return [util.let(str(_ident),_start,True),data.While(_cond,_body+[_upda])]
+            else:
+                self.for_counter+=1
+                self.wskipline()
+                _in=f'__for_idx_{self.for_counter}__'
+                _cond=data.Expr([data.Binary(data.Variable(_in),'<',data.Call('len',[_start]))])
+                _upda=util.increment(_in)
+                self.expect('OP','{')
+                _body=self.parse_block()
+                self.expect('OP','}')
+                self.expect('END')
+                _=util.let(str(_ident),data.Expr([data.Index(_start.value[0],data.Expr([data.Variable(_in)]))]))
+                return [util.let(_in,data.Expr([data.Literal('0')]),True),data.While(_cond,[_]+_body+[_upda])]
         else: self.error('invalid_syntax_for')
         return []
 
