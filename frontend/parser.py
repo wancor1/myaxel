@@ -15,12 +15,11 @@ class Parser:
         self.statements:list=[]
         self.blocker:int=0
         self.for_counter:int=0
-        self.debug=debug
-        if self.debug: store.debug=not store.debug
+        self.debug:bool=debug
 
     def next(self,c:int=1) -> None:
         for i in range(c):
-            if store.debug and store.fromlexer: print(self.current_token)
+            if self.debug and store.fromlexer: print(self.current_token)
             self.current+=1
             if self.current < len(self.tokens):
                 self.current_token=self.tokens[self.current]
@@ -355,7 +354,6 @@ class Parser:
 
     def parse_expr_only(self) -> data.Expr:
         _=self.parse_expression()
-        if self.debug: store.debug=not store.debug
         return _
 
     # === blocks ===
@@ -577,5 +575,4 @@ class Parser:
             stmt=self.parse_statement()
             if isinstance(stmt,list): statements.extend(stmt)
             elif stmt: statements.append(stmt)
-            if self.debug: store.debug=not store.debug
         return data.Program(statements),self.errors

@@ -59,7 +59,7 @@ class Interpreter:
             elif s[evl]=='{':
                 j=s.find('}',evl)
                 if j==-1: return self.error(s,'NotFindBraces')
-                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j],debug=True).main(),debug=True).parse_expr_only()))
+                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j],debug=False).main(),debug=False).parse_expr_only()))
                 evl=j+1
             else:
                 result+=s[evl]

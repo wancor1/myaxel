@@ -19,14 +19,14 @@ def Initialization():
 
 def run_Lexer():
     if store.debug: print(f'\n{'='*N}Lexer output{'='*N}')
-    lexer=_lexer.Lexer(const.FILEPATH)
+    lexer=_lexer.Lexer(const.FILEPATH,debug=store.debug)
     token=lexer.main()
     if store.debug: print(f'\n{token}')
     return token
 
 def run_Parser(token):
     if store.debug: print(f'\n{'='*N}Parser output{'='*N}')
-    parser=_parser.Parser(token)
+    parser=_parser.Parser(token,store.debug)
     parsed=parser.main()
     if store.debug: 
         print(f'\n{parsed}')
@@ -38,7 +38,7 @@ def run_Parser(token):
 
 def run_Resolver(program):
     if store.debug: print(f'\n{'='*N}Resolver output{'='*N}')
-    resolver=_resolver.Resolver()
+    resolver=_resolver.Resolver(store.debug)
     resolved=resolver.main(program[0].statements)
     if store.debug: 
         print(f'\nError:{resolved}')

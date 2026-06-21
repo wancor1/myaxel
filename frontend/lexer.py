@@ -18,8 +18,7 @@ class Lexer:
         self.line:int=1
         self.column:int=1
         self.aprint=get_async_print()
-        self.debug=debug
-        if self.debug: store.debug=not store.debug
+        self.debug:bool=debug
 
     def load_file(self,path:str) -> str:
         with open(path,encoding="utf-8") as f: return f.read()
@@ -49,7 +48,7 @@ class Lexer:
     def main(self):
         while self.current<self.filelen:
             self.stack.append(self.current_char)
-            if store.debug:
+            if self.debug:
                 self.aprint(self.stack)
             if self.stack[0] in const.SPACES:                       # space
                 self.stack.clear()
@@ -134,5 +133,4 @@ class Lexer:
                     self.stack.clear()
             self.next()
         self.aprint.close()
-        if self.debug: store.debug=not store.debug
         return self.output

@@ -6,11 +6,12 @@ import data.data as data
 import util.util as util
 
 class Resolver:
-    def __init__(self) -> None:
+    def __init__(self,debug:bool=False) -> None:
         self.scope_stuck:list[dict[str,dict[str,object]]]=[{}]
         self.in_function:bool=False
         self.in_loop:bool=False
         self.errors:list=[]
+        self.debug:bool=debug
 
     def error(self,type:str,**kwargs) -> None:
         if type=='NotFoundVariable':    self.errors.append(data.ErrorFormatAST(type,f'{kwargs['name']} is not a valid variable name'))
@@ -20,7 +21,7 @@ class Resolver:
         elif type=='NotLoop':           self.errors.append(data.ErrorFormatAST(type,f'not inside the loop'))
         elif type=='UnknownNode':       self.errors.append(data.ErrorFormatAST(type,f'Unknown Node: {kwargs['node']}'))
         else :                          self.errors.append(data.ErrorFormatAST(type,f'Unknown Error'))
-        if store.debug: print(f'\033[38;5;196m>> {type};{kwargs}\033[0m')
+        if self.debug: print(f'\033[38;5;196m>> {type};{kwargs}\033[0m')
 
     # ===== scope =====
 
@@ -66,52 +67,52 @@ class Resolver:
             if node.name not in self.scope_stuck[-1]: self.scope_stuck[-1][node.name]={'type':node.type_,'mutable':node.mutable}
             else: self.error('TooManyLet',name=node.name)
         self.resolve(node.value)
-        if store.debug: print(f'\033[38;5;244m>stuck {self.scope_stuck}\033[0m')
+        if self.debug: print(f'\033[38;5;244m>stuck {self.scope_stuck}\033[0m')
 
     def resolve_fn(self,node:data.Fn):
         self.in_function=True
         self.scope_push()
-        if store.debug: print(f'\033[38;5;244m>params {node.params}\033[0m')
+        if self.debug: print(f'\033[38;5;244m>params {node.params}\033[0m')
         for _ in node.params:
             if not _: continue
             self.scope_stuck[-1][_.name]={'type':_.type_ if _.type_ else 'any','mutable':False}
-        if store.debug:
+        if self.debug:
             print(f'\033[38;5;244m>body {node.body}\033[0m')
             print(f'\033[34m==================== fn {node.name} ====================',end='\033[0m')
         self.twopass(node.body)
-        if store.debug: print(f'\033[34m======================{"="*(len(node.name)+1)}======================\033[0m')
+        if self.debug: print(f'\033[34m======================{"="*(len(node.name)+1)}======================\033[0m')
         self.scope_pop()
         self.in_function=False
 
     def resolve_if(self,node:data.If):
-        if store.debug: print(f'\033[38;5;244m>condition {node.condition}\033[0m')
+        if self.debug: print(f'\033[38;5;244m>condition {node.condition}\033[0m')
         self.resolve(node.condition)
-        if store.debug:
+        if self.debug:
             print(f'\033[38;5;244m>body {node.body}\033[0m')
             print(f'\033[34m==================== If body ====================',end='\033[0m')
         self.scope_push()
         self.twopass(node.body)
         self.scope_pop()
-        if store.debug: print(f'\033[34m================================================\033[0m')
+        if self.debug: print(f'\033[34m================================================\033[0m')
         if node.else_:
-            if store.debug:
+            if self.debug:
                 print(f'\033[38;5;244m>else {node.else_}\033[0m')
                 print(f'\033[34m==================== If else ====================',end='\033[0m')
             self.scope_push()
             self.twopass(node.else_)
             self.scope_pop()
-            if store.debug: print(f'\033[34m=================================================\033[0m')
+            if self.debug: print(f'\033[34m=================================================\033[0m')
 
     def resolve_while(self,node:data.While):
         self.in_loop=True
-        if store.debug: print(f'\033[38;5;244m>condition {node.condition}\033[0m')
+        if self.debug: print(f'\033[38;5;244m>condition {node.condition}\033[0m')
         self.resolve(node.condition)
-        if store.debug:
+        if self.debug:
             print(f'\033[38;5;244m>body {node.body}\033[0m')
             print(f'\033[34m==================== While body ====================',end='\033[0m')
         self.scope_push()
         self.twopass(node.body)
-        if store.debug: print(f'\033[34m===================================================\033[0m')
+        if self.debug: print(f'\033[34m===================================================\033[0m')
         self.scope_pop()
         self.in_loop=False
 
@@ -157,7 +158,7 @@ class Resolver:
 
     def onepass(self,nd):
         for node in nd:
-            if store.debug: print(f'> {node}')
+            if self.debug: print(f'> {node}')
             if isinstance(node,data.Let):
                 if node.name not in self.scope_stuck[-1]: self.scope_stuck[-1][node.name]={'type':node.type_,'mutable':node.mutable}
                 else: self.error('TooManyLet',name=node.name)
@@ -167,13 +168,13 @@ class Resolver:
 
     def twopass(self,nd):
         for node in nd:
-            if store.debug: print(f'\n{node}')
+            if self.debug: print(f'\n{node}')
             self.resolve(node)
 
     def main(self,nd):
-        if store.debug: print('\033[36m> 1pass\033[0m')
+        if self.debug: print('\033[36m> 1pass\033[0m')
         self.onepass(nd)
         if self.errors: return self.errors
-        if store.debug: print(f'\033[35m{self.scope_stuck}\n\033[36m> 2pass\033[0m')
+        if self.debug: print(f'\033[35m{self.scope_stuck}\n\033[36m> 2pass\033[0m')
         self.twopass(nd)
         return self.errors
