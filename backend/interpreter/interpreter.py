@@ -59,7 +59,7 @@ class Interpreter:
             elif s[evl]=='{':
                 j=s.find('}',evl)
                 if j==-1: return self.error(s,'NotFindBraces')
-                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j]).main()).parse_expr_only()))
+                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j],debug=True).main(),debug=True).parse_expr_only()))
                 evl=j+1
             else:
                 result+=s[evl]
@@ -240,35 +240,30 @@ class Interpreter:
         elif node.name=='println':  return self.func_println(node)
         # === util ===
         elif node.name=='type':
-            if not node.args: return self.error(node,"type() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"type() requires exactly 1 argument")
+            if len(node.args)!=1: return self.error(node,"type() requires exactly 1 argument")
             return str(self.env.get(node.args[0].value[0].name,'type'))
         elif node.name=='vars':
-            if not node.args: return self.error(node,"vars() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"vars() requires exactly 1 argument")
+            if len(node.args)!=1: return self.error(node,"vars() requires exactly 1 argument")
             return str(self.env.get(node.args[0].value[0].name,''))
         # === math ===
         elif node.name=='abs':
-            if not node.args: return self.error(node,"abs() requires exactly 1 argument")
+            if not node.args: return self.error(node,"abs() requires at least 1 argument")
             val=self.eval(node.args[0])
             if isinstance(val,(int,float)): return abs(val)
             elif isinstance(val,list): return [abs(i) for i in val]
             else: return self.error(node,"abs() requires a numeric argument")
         elif node.name=='floor':
-            if not node.args: return self.error(node,"floor() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"floor() requires exactly 1 argument")
+            if len(node.args)!=1: return self.error(node,"floor() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"floor() requires a numeric argument")
             return math.floor(val)
         elif node.name=='ceil':
-            if not node.args: return self.error(node,"ceil() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"ceil() requires exactly 1 argument")
+            if len(node.args)!=1: return self.error(node,"ceil() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"ceil() requires a numeric argument")
             return math.ceil(val)
         elif node.name=='round':
-            if not node.args: return self.error(node,"round() requires exactly 1 argument")
-            elif len(node.args)>1: return self.error(node,"round() requires exactly 1 argument")
+            if len(node.args)!=1: return self.error(node,"round() requires exactly 1 argument")
             val=self.eval(node.args[0])
             if not isinstance(val,(int,float)): return self.error(node,"round() requires a numeric argument")
             return math.floor(val+0.5)
@@ -278,6 +273,10 @@ class Interpreter:
             val=self.eval(node.args[0])
             if not isinstance(val,list): return self.error(node,"len() requires an array argument")
             return len(val)
+        # === io ===
+        elif node.name=='input':
+            if len(node.args)>1: return self.error(node,"input() requires exactly 0 or 1 argument")
+            return input(self.eval(node.args[0]))
         return _NOTFOUND
 
     def func_print(self,node:data.Call) -> str:

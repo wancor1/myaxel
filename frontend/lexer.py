@@ -7,7 +7,7 @@ from util.print import get_async_print
 
 
 class Lexer:
-    def __init__(self,path:str='',source:str=''):
+    def __init__(self,path:str='',source:str='',debug:bool=False):
         if source: self.file:str=source
         else: self.file:str=self.load_file(path)
         self.filelen:int=len(self.file)
@@ -18,6 +18,8 @@ class Lexer:
         self.line:int=1
         self.column:int=1
         self.aprint=get_async_print()
+        self.debug=debug
+        if self.debug: store.debug=not store.debug
 
     def load_file(self,path:str) -> str:
         with open(path,encoding="utf-8") as f: return f.read()
@@ -132,4 +134,5 @@ class Lexer:
                     self.stack.clear()
             self.next()
         self.aprint.close()
+        if self.debug: store.debug=not store.debug
         return self.output

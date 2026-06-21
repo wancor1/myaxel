@@ -6,7 +6,7 @@ import data.data as data
 import util.util as util
 
 class Parser:
-    def __init__(self,tokens:list[data.Token]) -> None:
+    def __init__(self,tokens:list[data.Token],debug:bool=False) -> None:
         self.tokens:list[data.Token]=tokens
         self.current:int=0
         self.current_token:data.Token=self.get(0)
@@ -15,6 +15,8 @@ class Parser:
         self.statements:list=[]
         self.blocker:int=0
         self.for_counter:int=0
+        self.debug=debug
+        if self.debug: store.debug=not store.debug
 
     def next(self,c:int=1) -> None:
         for i in range(c):
@@ -352,7 +354,9 @@ class Parser:
         return p
 
     def parse_expr_only(self) -> data.Expr:
-        return self.parse_expression()
+        _=self.parse_expression()
+        if self.debug: store.debug=not store.debug
+        return _
 
     # === blocks ===
 
@@ -573,4 +577,5 @@ class Parser:
             stmt=self.parse_statement()
             if isinstance(stmt,list): statements.extend(stmt)
             elif stmt: statements.append(stmt)
+            if self.debug: store.debug=not store.debug
         return data.Program(statements),self.errors
