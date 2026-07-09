@@ -45,6 +45,7 @@ class Interpreter:
         elif isinstance(node,data.Use):             return self.eval_use(node)
         elif isinstance(node,data.Access):          return self.eval_access(node)
         elif isinstance(node,data.TupleAccess):     return self.eval_tupleaccess(node)
+        elif isinstance(node,data.Tree):            return self.eval_tree(node)
         else:                                       raise exception.UnknownException('unknown keyword')
 
     # === ===
@@ -59,7 +60,7 @@ class Interpreter:
             elif s[evl]=='{':
                 j=s.find('}',evl)
                 if j==-1: return self.error(s,'NotFindBraces')
-                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j],debug=False).main(),debug=False).parse_expr_only()))
+                result+=str(self.eval(_parser.Parser(_lexer.Lexer(source=s[evl+1:j]).main()).parse_expr_only()))
                 evl=j+1
             else:
                 result+=s[evl]
@@ -93,6 +94,16 @@ class Interpreter:
         if len(t)<=i or -len(t)>i: return self.error(node,'TupleIndexRangeError')
         return t[i]
 
+    def eval_tree(self,node:data.Tree):
+        return self.eval_tree_elements(node.elements)
+
+    def eval_tree_elements(self,el:list) -> list:
+        r:list=[]
+        for i in el:
+            if isinstance(i,data.TreeNode): r.append(data.RuntimeTreeNode(self.eval(i.value),self.eval_tree_elements(i.children)))
+            else: r.append(self.eval(i))
+        return r
+
     def eval_binary(self,node:data.Binary):
         l=self.eval(node.left)
         if node.op=='&&':
@@ -113,6 +124,7 @@ class Interpreter:
         elif node.op=='*':  return l*r
         elif node.op=='/':  return self.error(node,'div0error') if r==0 else l/r
         elif node.op=='**': return l**r
+        elif node.op=='%':  return l%r
         elif node.op=='<':  return l<r
         elif node.op=='>':  return l>r
         elif node.op=='<=': return l<=r
@@ -245,6 +257,9 @@ class Interpreter:
         elif node.name=='vars':
             if len(node.args)!=1: return self.error(node,"vars() requires exactly 1 argument")
             return str(self.env.get(node.args[0].value[0].name,''))
+        elif node.name=='strtoint':
+            if len(node.args)!=1: return self.error(node,"strtoint() requires exactly 1 argument")
+            
         # === math ===
         elif node.name=='abs':
             if not node.args: return self.error(node,"abs() requires at least 1 argument")
@@ -279,23 +294,21 @@ class Interpreter:
             return input(self.eval(node.args[0]))
         return _NOTFOUND
 
-    def func_print(self,node:data.Call) -> str:
+    def common_func_print(self,node:data.Call):
         if len(node.args) > 1:
             t=self.eval(node.args[0])
             g=[self.eval(a) for a in node.args[1:]]
-            _=self.eval_string(str(t),g)
+            return self.eval_string(str(t),g)
         else:
-            _=self.eval(*node.args)
+            return self.eval(*node.args)
+
+    def func_print(self,node:data.Call) -> str:
+        _=self.common_func_print(node)
         print(_,end='')
         return str(_)
 
     def func_println(self,node:data.Call) -> str:
-        if len(node.args) > 1:
-            t=self.eval(node.args[0])
-            g=[self.eval(a) for a in node.args[1:]]
-            _=self.eval_string(str(t),g)
-        else:
-            _=self.eval(*node.args)
+        _=self.common_func_print(node)
         print(_)
         return str(_)
 

@@ -5,6 +5,8 @@ import data.store as store
 import data.data as data
 import util.util as util
 
+from typing import cast
+
 class Parser:
     def __init__(self,tokens:list[data.Token],debug:bool=False) -> None:
         self.tokens:list[data.Token]=tokens
@@ -28,7 +30,7 @@ class Parser:
             else:
                 self.blocker+=1
                 self.current_token=data.Token('ERROR',f'SEEING THIS IS AN ERROR! ; NEXT ERROR!',self.current,-1)
-                if self.blocker>=20: raise type("LoopError", (Exception,), {})("Unknown Error:heart:")
+                if self.blocker>=20: raise type('LoopError', (Exception,), {})('Unknown Error:heart:')
 
     def get(self,num:int=1,cfs:bool=False) -> data.Token:
         i=num if cfs else self.current+num
@@ -144,48 +146,48 @@ class Parser:
         elif op=='--':  return util.decrement(ident)
         else:           return self.error('not_crement')
 
-    def parse_expression(self) -> data.Expr:
-        l=self.parse_comp()
+    def parse_expression(self,identbracket:bool=True) -> data.Expr:
+        l=self.parse_comp(identbracket)
         while self.current_token.value in const.EXPRS:
             o=self.current_token.value
             self.next()
-            r=self.parse_comp()
+            r=self.parse_comp(identbracket)
             l=data.Binary(l,o,r)
         return data.Expr([l])
 
-    def parse_comp(self):
-        l=self.parse_equality()
+    def parse_comp(self,identbracket:bool=True):
+        l=self.parse_equality(identbracket)
         while self.current_token.value in const.COMPARISON:
             o=self.current_token.value
             self.next()
-            r=self.parse_equality()
+            r=self.parse_equality(identbracket)
             l=data.Binary(l,o,r)
         return l
 
-    def parse_equality(self):
-        l=self.parse_term()
+    def parse_equality(self,identbracket:bool=True):
+        l=self.parse_term(identbracket)
         while self.current_token.value in const.EQUALITY:
             o=self.current_token.value
             self.next()
-            r=self.parse_term()
+            r=self.parse_term(identbracket)
             l=data.Binary(l,o,r)
         return l
 
-    def parse_term(self):
-        l=self.parse_power()
+    def parse_term(self,identbracket:bool=True):
+        l=self.parse_power(identbracket)
         while self.current_token.value in const.TERMS:
             o=self.current_token.value
             self.next()
-            r=self.parse_power()
+            r=self.parse_power(identbracket)
             l=data.Binary(l,o,r)
         return l
 
-    def parse_power(self):
-        l=self.parse_postfix()
+    def parse_power(self,identbracket:bool=True):
+        l=self.parse_postfix(identbracket)
         if self.current_token.value in const.POWER:
             o=self.current_token.value
             self.next()
-            r=self.parse_power()
+            r=self.parse_power(identbracket)
             return data.Binary(l,o,r)
         return l
 
@@ -196,13 +198,14 @@ class Parser:
         elif self.current_token.type=='STRING':             return data.Literal(self.expect('STRING').value)
         elif self.current_token.type=='FSTRING':            return data.Literal(self.expect('FSTRING').value,True)
         elif self.current_token.value in ('true','false'):  return data.Literal(self.expect('KEYWORD').value)
-        elif self.current_token_tv==('OP','['):             return self.parse_primary_list()
-        elif self.current_token_tv==('OP','('):             return self.parse_paren()
-        else: self.error('unknown_primary','NUMBER | IDENT | STRING')
-        self.next()
+        elif self.current_token_tv==('OP','['):             assert not isinstance(x:=self.parse_primary_bracket(False), list);return x
+        elif self.current_token_tv==('OP','('):             return self.parse_primary_paren()
+        else:
+            self.error('unknown_primary','NUMBER | IDENT | STRING')
+            self.next()
         return data.Literal('')
 
-    def parse_paren(self):
+    def parse_primary_paren(self):
         self.expect('OP','(')
         self.wskipline()
         first=self.parse_expression()
@@ -248,21 +251,33 @@ class Parser:
             if _: return data.Variable(_.value)
             else: return data.Variable('')
 
-    def parse_primary_list(self) -> data.Array:
-        value:list=[]
+    def parse_primary_bracket(self,l:bool=False) -> list | data.Array | data.Tree:
         self.expect('OP','[')
+        t:bool=False
+        v:list=[]
         while self.current_token_tv!=('OP',']'):
-            value.append(self.parse_expression())
+            _=self.parse_expression(False)
+            if self.current_token_tv==('OP','['):
+                t=True
+                v.append(self.parse_primary_tree(_))
+            else: v.append(_)
             if self.current_token_tv==('OP',','): self.expect('OP',',')
         self.expect('OP',']')
-        return data.Array(value)
+        if l: return v
+        if t: return data.Tree(v)
+        return data.Array(v)
 
-    def parse_postfix(self):
+    def parse_primary_tree(self,v):
+        a:list=self.parse_primary_bracket(True) #type:ignore
+        return data.TreeNode(v,a)
+
+    def parse_postfix(self,identbracket:bool=True):
         e=self.parse_primary()
         while self.current_token_tv in(('OP','['),('OP','.')):
             if self.current_token_tv==('OP','['):
+                if not identbracket: break
                 self.expect('OP','[')
-                i=self.parse_expression()
+                i=self.parse_expression(False)
                 self.expect('OP',']')
                 e=data.Index(e,i)
             else:

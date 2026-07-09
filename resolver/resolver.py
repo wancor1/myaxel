@@ -55,6 +55,7 @@ class Resolver:
         elif isinstance(node,data.TupleAccess): self.resolve(node.obj)
         elif isinstance(node,data.MethodCall): self.resolve_methodcall(node)
         elif isinstance(node,data.Array): self.resolve_array(node)
+        elif isinstance(node,data.Tree): self.resolve_tree(node)
         elif isinstance(node,data.Tuple): self.resolve_tuple(node)
         elif isinstance(node,data.Return): self.resolve_return(node)
         elif isinstance(node,data.Break): self.resolve_breakcontinue()
@@ -143,6 +144,14 @@ class Resolver:
 
     def resolve_array(self,node:data.Array):
         for i in node.elements: self.resolve(i)
+
+    def resolve_tree(self,node:data.Tree):
+        for i in node.elements:
+            if isinstance(i,data.TreeNode):
+                self.resolve(i.value)
+                self.resolve(i.children)
+            else:
+                self.resolve(i)
 
     def resolve_tuple(self,node:data.Tuple):
         for i in node.elements: self.resolve(i)

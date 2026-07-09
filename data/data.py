@@ -160,7 +160,25 @@ class Index:
     array:x
     index:Expr
 
+@dataclass
+class Tree:
+    elements:list
+
+@dataclass
+class TreeNode:
+    value:x
+    children:list
+
 # ==========
 
-x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index|Tuple|TupleAccess
-a=Call|Parm|Expr|Literal|Variable|Binary|Assign|CompoundAssign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use|Tuple|TupleAccess
+x=Literal|Variable|Binary|Call|Unary|Array|Access|MethodCall|Index|Tuple|TupleAccess|Tree|TreeNode
+a=Call|Parm|Expr|Literal|Variable|Binary|Assign|CompoundAssign|Unary|Access|MethodCall|Array|Index|Let|If|Fn|Break|Return|While|Use|Tuple|TupleAccess|Tree|TreeNode
+
+# ===== interpreter =====
+
+@dataclass
+class RuntimeTreeNode:
+    value:object
+    children:list
+    def __repr__(self):
+        return f'{self.value!r}{self.children!r}'

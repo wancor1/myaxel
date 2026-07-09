@@ -99,8 +99,8 @@ class Lexer:
                     if escape: escape=False; continue
                     if char=='\\': escape=True; continue
                     if char==quote: break
-                    self.aprint(f'>{string}')
-                self.aprint(f'>{string}')
+                    if self.debug: self.aprint(f'>{string}')
+                if self.debug: self.aprint(f'>{string}')
                 self.add_token(''.join(self.stack))
                 self.stack.clear()
             elif self.stack[0].isdigit():                           # number
